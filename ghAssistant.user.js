@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.9.1.20130418
+// @version         0.9.2.20130418
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -46,10 +46,14 @@
 //  Local storage support to preserve the review across page refreshes!
 // 0.9.1.20130418
 //  Moved to separate GitHub repository
+// 0.9.2.20130418
+//  Fixed regression from 0.6.2 (reviewed file was not hiding on Fail/Ok click)
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
 //    To profile and see if something can be improved.
+// 2. Upon wiping current repo / all local storage things, also all the items on the current
+//    page should be visually restored to the normal state.
 
 // ============================= CONFIG ================================
 
@@ -354,6 +358,7 @@ GHA._attachReviewStatusButton = function (child, text /*also cssClassNamePostfix
             // remove from localstorage
             GHA.Storage.clearState(filePath);
 
+            // unmark the header with background color change
             GHAReviewStatusMarker.unmark(diffContainerHeader, ghaClassName);
         } else {
             /* mark as Ok/Fail */
@@ -362,7 +367,11 @@ GHA._attachReviewStatusButton = function (child, text /*also cssClassNamePostfix
             var newState = (text === L10N.ok ? 1 : 0);
             GHA.Storage.saveState(filePath, newState);
 
+            // mark the header with background color change
             GHAReviewStatusMarker.mark(diffContainerHeader, ghaClassName, ghaClassNameAlt);
+
+            // hide the just-reviewed file contents
+            diffContainerBody.style.display = 'none';
 
             // scroll the page so that currently reviewed file is in the top
             document.location = '#diff-' + currentDiffIdx;
