@@ -47,10 +47,37 @@ Opera
 
  1. Launch the following addresses to configure the browser: set the directory on your disk where to store UserScripts, and activate UserScripts on HTTPS (GitHub is served via HTTPS):
 
-    opera:config#UserPrefs|UserJavaScriptFile
-    opera:config#UserPrefs|UserJavaScriptonHTTPS
+        opera:config#UserPrefs|UserJavaScriptFile
+        opera:config#UserPrefs|UserJavaScriptonHTTPS
+
  1. Download the [ghAssistant.user.js](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js) and put it in the UserScripts folder declared above.
  1. Restart the browser.
+
+Updates
+=======
+
+The userscript has an URL to this GitHub repo in its metadata. Hence in Firefox and Chrome you can benefit from easy updates.
+
+Firefox
+--
+
+Go to `about:addons` (or `Tools > Addons` from Firefox menu, or `Ctrl+Shift+A` from keyboard) to GreaseMonkey tab.
+Right click on the entry and choose "Find updates".
+
+If you opted in to have automatic updates in Firefox, the same setting will also apply to GreaseMonkey
+which will periodically automatically check for updates of UserScripts.
+
+Chrome
+--
+
+Open `Tampermonkey menu > Options`. Select the entry and choose "Trigger an update" from the dropdown.
+
+Tampermonkey also checks for UserScripts updates periodically (configurable in extension's settings; default is 12h).
+
+Opera
+--
+
+AFAIK you'll have to do it manually.
 
 Checking if the extension works
 ===============================
