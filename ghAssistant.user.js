@@ -338,7 +338,7 @@ GHA._attachReviewStatusButton = function (child, text /*also cssClassNamePostfix
     var diffContainerHeader = diffContainer.children[0]; // .meta
     var diffContainerBody = diffContainer.children[1];   // .data
 
-    var parent = XPathTools.getElementByXpath('.//div[@class="actions"]/div[@class="button-group"]', diffContainer);
+    var parent = diffContainer.querySelector('div.actions > div.button-group');
 
     var newButton = document.createElement('a');
     newButton.className = 'minibutton';
@@ -571,15 +571,6 @@ var DomUtil = {
         dStyle.type = 'text/css';
         dStyle.appendChild(document.createTextNode(sCss));
         document.getElementsByTagName('head')[0].appendChild(dStyle);
-    }
-};
-
-// =================================================================================================
-
-var XPathTools = {
-    getElementByXpath : function(xpath, referenceNode) {
-        var xPathResult = document.evaluate (xpath, referenceNode, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-        return xPathResult.singleNodeValue;
     }
 };
 
