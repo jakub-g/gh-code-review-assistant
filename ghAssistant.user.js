@@ -143,7 +143,7 @@ GHA.attachGlobalCss = function () {
         css.push('.ghAssistantFileSide a {display: block; height:100%;}');
 
         // override GH's CSS with the "+" button on the side to add the comments
-        css.push('#files .add-bubble { margin-left:-'+ (25+CONFIG.sidebarSize)+'px} !important');
+        css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize)+'px} !important');
     }
 
     DomUtil.addCss(css.join('\n'));
