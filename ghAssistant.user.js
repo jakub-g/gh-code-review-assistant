@@ -57,8 +57,9 @@
 // 2. Upon wiping current repo / all local storage things, also all the items on the current
 //    page should be visually restored to the normal state.
 // 3. Scroll upon changing reviewed state, and make the next item visible, only if the previous state was "not-reviewed".
+// 4. Storing CONFIG in the browser instead of the script (script should only provide defaults)
 
-// ============================= CONFIG ================================
+// ============================================ CONFIG =============================================
 
 var CONFIG = {};
 // If there's more than N commits in the diff, automatically collapse them all.
@@ -82,13 +83,19 @@ CONFIG.footerSize = 8;
 CONFIG.sidebarColor1 = '#eee';
 CONFIG.sidebarColor2 = '#aaa';
 
-// ============================== CODE =================================
+// =================================================================================================
 
 var L10N = {
     ok: 'Ok',
     fail: 'Fail',
     expandAll: 'Expand all',
     collapseAll: 'Collapse all',
+    buttonWipeAllStorage: 'Wipe ALL GHA storage',
+    buttonWipeRepoStorage: 'Wipe GH Assistant storage for this repo',
+    alertWipeDone: "Done",
+    sidebarFooterTooltip: "Click me to scroll to the top of this file",
+    questionWipeAll: "Really want to wipe *all* the GH Assistant storage ",
+    questionWipeRepo: "Really want to wipe GH Assistant storage for the repo ",
 };
 
 var gha = {
@@ -294,7 +301,7 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
     var diffContainer = child;
     var diffContainerBody = diffContainer.children[1];
 
-    var hLink = '<a title="Click me to scroll to the top of this file" href="#' + diffContainer.id + '">&nbsp;</a>';
+    var hLink = '<a title="' + L10N.sidebarFooterTooltip + '" href="#' + diffContainer.id + '">&nbsp;</a>';
 
     var dfoot = document.createElement('div');
     dfoot.className = 'ghAssistantFileFoot';
@@ -312,13 +319,13 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
 
     var div = document.createElement('div');
     var buttonAll = document.createElement('button');
-    buttonAll.innerHTML = 'Wipe ALL GHA storage';
+    buttonAll.innerHTML = L10N.buttonWipeAllStorage;
     buttonAll.className = 'minibutton ghAssistantStorageWipe';
     buttonAll.addEventListener('click', function () {
-        var msg = "Really want to wipe *all* the GH Assistant storage (" + gha.instance.storage.checkSize() + " entries)?";
+        var msg = L10N.questionWipeAll + " (" + gha.instance.storage.checkSize() + " entries)?";
         if( window.confirm(msg) ) {
             gha.instance.storage.wipeStorage();
-            window.alert("Done");
+            window.alert(L10N.alertWipeDone);
         }
     });
 
@@ -326,13 +333,13 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     var prefix = gha.instance.storage._prefix + repoId;
 
     var buttonRepo = document.createElement('button');
-    buttonRepo.innerHTML = 'Wipe GH Assistant storage for this repo';
+    buttonRepo.innerHTML = L10N.buttonWipeRepoStorage;
     buttonRepo.className = 'minibutton ghAssistantStorageWipe';
     buttonRepo.addEventListener('click', function () {
-        var msg = "Really want to wipe GH Assistant storage for " + repoId + " (" + gha.instance.storage.checkSize(prefix) + " entries)?";
+        var msg = L10N.questionWipeRepo + repoId + " (" + gha.instance.storage.checkSize(prefix) + " entries)?";
         if( window.confirm(msg) ) {
             gha.instance.storage.wipeStorage(prefix);
-            window.alert("Done");
+            window.alert(L10N.alertWipeDone);
         }
     });
 
@@ -602,7 +609,6 @@ gha.util.DomUtil = {
 // =================================================================================================
 
 var main = function () {
-
     // read config
     var mainDiffDiv = document.getElementById('files');
     var nbOfFiles = mainDiffDiv.children.length;
