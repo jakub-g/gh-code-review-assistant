@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.9.2.20130418
+// @version         0.9.3.20130419
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -48,12 +48,15 @@
 //  Moved to separate GitHub repository
 // 0.9.2.20130418
 //  Fixed regression from 0.6.2 (reviewed file was not hiding on Fail/Ok click)
+// 0.9.3.20130419
+//  Major code refactor; fixed margin issue with inline comment button on the left
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
 //    To profile and see if something can be improved.
 // 2. Upon wiping current repo / all local storage things, also all the items on the current
 //    page should be visually restored to the normal state.
+// 3. Scroll upon changing reviewed state, and make the next item visible, only if the previous state was "not-reviewed".
 
 // ============================= CONFIG ================================
 
@@ -86,11 +89,45 @@ var L10N = {
     fail: 'Fail',
     expandAll: 'Expand all',
     collapseAll: 'Collapse all',
-}
+};
 
-var GHA = {};
+var gha = {
+    classes : {},  // classes to be instantiated
+    util : {},     // classes with static methods
+    instance : {}  // holder of instantiated storage
+};
 
-GHA.attachGlobalCss = function () {
+// =================================================================================================
+
+gha.util.DomReader = {};
+
+/**
+ * Get a list of containers of the each diff-file.
+ */
+gha.util.DomReader.getDiffContainers = function() {
+    var mainDiffDiv = document.getElementById('files');
+    var children = mainDiffDiv.children;
+    var nbOfCommits = children.length;
+
+    var out = [];
+    for(var i=0, ii = nbOfCommits; i<ii; i++) {
+        var child = children[i];
+        if(child.id && child.id.indexOf('diff-') === 0){
+            out.push(child);
+        }
+    }
+    return out;
+};
+
+gha.util.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
+    return diffContainerHeader.querySelector('.info').children[1].innerHTML.trim();
+};
+
+// =================================================================================================
+
+gha.util.DomWriter = {};
+
+gha.util.DomWriter.attachGlobalCss = function () {
     var css = [];
 
     css.push('.ghAssistantButtonStateNormal {\
@@ -146,43 +183,24 @@ GHA.attachGlobalCss = function () {
         css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize)+'px} !important');
     }
 
-    DomUtil.addCss(css.join('\n'));
-};
-
-/**
- * Get a list of containers of the each diff-file.
- */
-GHA.getDiffContainers = function() {
-    var mainDiffDiv = document.getElementById('files');
-    var children = mainDiffDiv.children;
-    var nbOfCommits = children.length;
-
-    var out = [];
-    for(var i=0, ii = nbOfCommits; i<ii; i++) {
-        var child = children[i];
-        if(child.id && child.id.indexOf('diff-') === 0){
-            out.push(child);
-        }
-    }
-    return out;
+    gha.util.DomUtil.addCss(css.join('\n'));
 };
 
 /**
  * Attach click listeners to each of the headers of the files in the diff
  */
-GHA.attachToggleDisplayOnClickListeners = function() {
-    var diffContainers = GHA.getDiffContainers();
+gha.util.DomWriter.attachToggleDisplayOnClickListeners = function() {
+    var diffContainers = gha.util.DomReader.getDiffContainers();
 
     for(var i=0, ii = diffContainers.length; i<ii; i++) {
-        GHA._attachClickListenersToChild(diffContainers[i]);
+        gha.util.DomWriter._attachClickListenersToChild(diffContainers[i]);
     }
-}
+};
 
-GHA._attachClickListenersToChild = function (child) {
-    if(!child.id || child.id.indexOf('diff-') == -1){
+gha.util.DomWriter._attachClickListenersToChild = function (diffContainer) {
+    if(!diffContainer.id || diffContainer.id.indexOf('diff-') == -1){
         return;
     }
-    var diffContainer = child; // document.getElementById('diff-1');
 
     // We want the evt to fire on the header and some, but not all of the children...
     var diffContainerHeader = diffContainer.children[0];
@@ -190,41 +208,148 @@ GHA._attachClickListenersToChild = function (child) {
 
     var diffContainerBody = diffContainer.children[1];
 
-    var handler1 = GHA._getOnClickToggleDisplayHandler(diffContainerBody, false);
-    var handler2 = GHA._getOnClickToggleDisplayHandler(diffContainerBody, true);
+    var handlerForFileNameHeader = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, false);
+    var handlerForHeader         = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
 
-    diffContainerFileNameHeader.addEventListener('click', handler1, false);
-    diffContainerHeader.addEventListener('click', handler2, true);
-    diffContainerHeader.style.cursor = 'pointer';
-}
+    diffContainerFileNameHeader.addEventListener('click', handlerForFileNameHeader, false);
+    diffContainerHeader        .addEventListener('click', handlerForHeader, true);
+    diffContainerHeader        .style.cursor = 'pointer';
+};
 
 /**
- * @param elem element to be toggled upon clicking
- * @param bStrictTarget whether the event listener should fire only on its strict target or also children
+ * Add buttons that collapse/expand all the diffs on the current page.
  */
-GHA._getOnClickToggleDisplayHandler = function(elem, bStrictTarget) {
-    return function(evt){
-        if(bStrictTarget){
-            if (evt.currentTarget != evt.target) {
-                // don't want to trigger the event when clicking on "View file" or "Show comment"
-                return;
-            }
-        }
+gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
 
-        var currDisplay = elem.style.display;
-        if(currDisplay === 'none') {
-            elem.style.display = 'block';
+    var buttonBarContainer = document.querySelector('#toc');
+    var buttonBar = buttonBarContainer.children[0];
+
+    var newButton = document.createElement('a');
+    newButton.className = 'minibutton';
+    newButton.href = '#';
+
+    newButton.innerHTML = hiddenByDefault ? L10N.expandAll : L10N.collapseAll;
+
+    var nowHidden = hiddenByDefault; // closure to keep state
+    newButton.addEventListener('click', function(evt) {
+        if(nowHidden == true){
+            gha.util.VisibilityManager.toggleDisplayAll(true);
+            nowHidden = false;
+            newButton.innerHTML = L10N.collapseAll;
         } else {
-            elem.style.display = 'none';
+            gha.util.VisibilityManager.toggleDisplayAll(false);
+            nowHidden = true;
+            newButton.innerHTML = L10N.expandAll;
         }
-    };
+    });
+
+    buttonBar.appendChild(newButton);
 };
+
+/**
+ * Attach Ok/Fail buttons for code review, and sidebars/footers for navigating to the top of the file,
+ * for each of the files on the diff list.
+ */
+gha.util.DomWriter.attachPerDiffFileFeatures = function () {
+
+    var mainDiffDiv = document.getElementById('files');
+    var children = mainDiffDiv.children;
+    var nbOfCommits = children.length;
+
+    for(var i=0, ii = nbOfCommits; i<ii; i++) {
+        var child = children[i];
+        if (CONFIG.enableReviewedButton) {
+            gha.util.DomWriter._attachReviewStatusButton(child, L10N.ok);
+            gha.util.DomWriter._attachReviewStatusButton(child, L10N.fail);
+        }
+        if (CONFIG.enableDiffSidebarAndFooter) {
+            gha.util.DomWriter._attachSidebarAndFooter(child);
+        }
+    }
+};
+
+gha.util.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also cssClassNamePostfix*/) {
+    if(!diffContainer.id || diffContainer.id.indexOf('diff-') == -1){
+        return;
+    }
+
+    var newButton = document.createElement('a');
+    newButton.className = 'minibutton';
+    newButton.innerHTML = text;
+    newButton.addEventListener('click', gha.util.ClickHandlers.createReviewButtonHandler(text, diffContainer));
+
+    var parentOfNewButton = diffContainer.querySelector('div.actions > div.button-group');
+    gha.util.DomUtil.insertAsFirstChild(newButton, parentOfNewButton);
+};
+
+/**
+ * Add sidebar and footer to each of the files in the diff. When clicked, that sidebar/footer
+ * scrolls page to the top of the current file.
+ */
+gha.util.DomWriter._attachSidebarAndFooter = function (child) {
+    if(!child.id || child.id.indexOf('diff-') == -1){
+        return;
+    }
+
+    var diffContainer = child;
+    var diffContainerBody = diffContainer.children[1];
+
+    var hLink = '<a title="Click me to scroll to the top of this file" href="#' + diffContainer.id + '">&nbsp;</a>';
+
+    var dfoot = document.createElement('div');
+    dfoot.className = 'ghAssistantFileFoot';
+    dfoot.innerHTML = hLink;
+    diffContainer.appendChild(dfoot);
+
+    var dsidebar = document.createElement('div');
+    dsidebar.className = 'ghAssistantFileSide';
+    dsidebar.innerHTML = hLink;
+    diffContainer.appendChild(dsidebar);
+};
+
+gha.util.DomWriter.attachStorageWipeButtons = function () {
+    var footer = document.getElementById('footer');
+
+    var div = document.createElement('div');
+    var buttonAll = document.createElement('button');
+    buttonAll.innerHTML = 'Wipe ALL GHA storage';
+    buttonAll.className = 'minibutton ghAssistantStorageWipe';
+    buttonAll.addEventListener('click', function () {
+        var msg = "Really want to wipe *all* the GH Assistant storage (" + gha.instance.storage.checkSize() + " entries)?";
+        if( window.confirm(msg) ) {
+            gha.instance.storage.wipeStorage();
+            window.alert("Done");
+        }
+    });
+
+    var repoId = gha.instance.storage._repoId;
+    var prefix = gha.instance.storage._prefix + repoId;
+
+    var buttonRepo = document.createElement('button');
+    buttonRepo.innerHTML = 'Wipe GH Assistant storage for this repo';
+    buttonRepo.className = 'minibutton ghAssistantStorageWipe';
+    buttonRepo.addEventListener('click', function () {
+        var msg = "Really want to wipe GH Assistant storage for " + repoId + " (" + gha.instance.storage.checkSize(prefix) + " entries)?";
+        if( window.confirm(msg) ) {
+            gha.instance.storage.wipeStorage(prefix);
+            window.alert("Done");
+        }
+    });
+
+    div.appendChild(buttonRepo);
+    div.appendChild(buttonAll);
+    footer.appendChild(div);
+};
+
+// =================================================================================================
+
+gha.util.VisibilityManager = {};
 
 /**
  * Hide long diffs, i.e. those whose diff size is > @minDiff
  * @param {Integer} minDiff
  */
-GHA.hideLongDiffs = function(minDiff) {
+gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
 
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
@@ -249,39 +374,9 @@ GHA.hideLongDiffs = function(minDiff) {
 };
 
 /**
- * Add buttons that collapse/expand all the diffs on the current page.
- */
-GHA.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
-
-    var buttonBarContainer = document.querySelector('#toc');
-    var buttonBar = buttonBarContainer.children[0];
-
-    var newButton = document.createElement('a');
-    newButton.className = 'minibutton';
-    newButton.href = '#';
-
-    newButton.innerHTML = hiddenByDefault ? L10N.expandAll : L10N.collapseAll;
-
-    var nowHidden = hiddenByDefault; // closure to keep state
-    newButton.addEventListener('click', function(evt) {
-        if(nowHidden == true){
-            GHA.toggleDisplayAll(true);
-            nowHidden = false;
-            newButton.innerHTML = L10N.collapseAll;
-        } else {
-            GHA.toggleDisplayAll(false);
-            nowHidden = true;
-            newButton.innerHTML = L10N.expandAll;
-        }
-    });
-
-    buttonBar.appendChild(newButton);
-};
-
-/**
  * Collapse/expand all the diffs on the current page.
  */
-GHA.toggleDisplayAll = function(bVisible) {
+gha.util.VisibilityManager.toggleDisplayAll = function(bVisible) {
 
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
@@ -302,73 +397,61 @@ GHA.toggleDisplayAll = function(bVisible) {
     }
 };
 
+// =================================================================================================
+
+gha.util.ClickHandlers = {};
+
 /**
- * Attach Ok/Fail buttons for code review, and sidebars/footers for navigating to the top of the file,
- * for each of the files on the diff list.
+ * @param elem element to be toggled upon clicking
+ * @param bStrictTarget whether the event listener should fire only on its strict target or also children
  */
-GHA.attachPerDiffFileFeatures = function () {
-
-    var mainDiffDiv = document.getElementById('files');
-    var children = mainDiffDiv.children;
-    var nbOfCommits = children.length;
-
-    for(var i=0, ii = nbOfCommits; i<ii; i++) {
-        var child = children[i];
-        if (CONFIG.enableReviewedButton) {
-            GHA._attachReviewStatusButton(child, L10N.ok);
-            GHA._attachReviewStatusButton(child, L10N.fail);
+gha.util.ClickHandlers.createToggleDisplayHandler = function(elem, bStrictTarget) {
+    return function(evt){
+        if(bStrictTarget){
+            if (evt.currentTarget != evt.target) {
+                // don't want to trigger the event when clicking on "View file" or "Show comment"
+                return;
+            }
         }
-        if (CONFIG.enableDiffSidebarAndFooter) {
-            GHA._attachSidebarAndFooter(child);
+
+        var currDisplay = elem.style.display;
+        if(currDisplay === 'none') {
+            elem.style.display = 'block';
+        } else {
+            elem.style.display = 'none';
         }
-    }
+    };
 };
 
-GHA._getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
-    return diffContainerHeader.querySelector('.info').children[1].innerHTML.trim();
-}
+gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer) {
+    return function(evt) {
 
-GHA._attachReviewStatusButton = function (child, text /*also cssClassNamePostfix*/) {
-    if(!child.id || child.id.indexOf('diff-') == -1){
-        return;
-    }
+        var diffContainerHeader = diffContainer.children[0]; // .meta
+        var diffContainerBody = diffContainer.children[1];   // .data
+        var currentDiffIdx = Number(diffContainer.id.replace('diff-',''));
 
-    var currentDiffIdx = Number(child.id.replace('diff-',''));
-    var diffContainer = child;
-    var diffContainerHeader = diffContainer.children[0]; // .meta
-    var diffContainerBody = diffContainer.children[1];   // .data
-
-    var parent = diffContainer.querySelector('div.actions > div.button-group');
-
-    var newButton = document.createElement('a');
-    newButton.className = 'minibutton';
-    //newButton.href = '#fakeHash';
-
-    newButton.innerHTML = text;
-
-    newButton.addEventListener('click', function(evt) {
         var ghaClassName = 'ghAssistantButtonState' + text;
         var ghaClassNameAlt = 'ghAssistantButtonState' + (text === L10N.ok ? L10N.fail : L10N.ok);
         var wasMarked = diffContainerHeader.className.indexOf(ghaClassName) > -1;
-        var filePath = GHA._getFilePathFromDiffContainerHeader(diffContainerHeader);
+        var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
 
         if(wasMarked){
             /* unmark */
 
             // remove from localstorage
-            GHA.Storage.clearState(filePath);
+            gha.instance.storage.clearState(filePath);
 
             // unmark the header with background color change
-            GHAReviewStatusMarker.unmark(diffContainerHeader, ghaClassName);
+            gha.util.ReviewStatusMarker.unmark(diffContainerHeader, ghaClassName);
         } else {
             /* mark as Ok/Fail */
 
             // save in localstorage
             var newState = (text === L10N.ok ? 1 : 0);
-            GHA.Storage.saveState(filePath, newState);
+            gha.instance.storage.saveState(filePath, newState);
 
             // mark the header with background color change
-            GHAReviewStatusMarker.mark(diffContainerHeader, ghaClassName, ghaClassNameAlt);
+            gha.util.ReviewStatusMarker.mark(diffContainerHeader, ghaClassName, ghaClassNameAlt);
 
             // hide the just-reviewed file contents
             diffContainerBody.style.display = 'none';
@@ -382,73 +465,12 @@ GHA._attachReviewStatusButton = function (child, text /*also cssClassNamePostfix
                 nextFileContainer.children[1].style.display = 'block';
             }
         }
-    });
-
-    parent.insertBefore(newButton, parent.firstChild);
-};
-
-/**
- * Add sidebar and footer to each of the files in the diff. When clicked, that sidebar/footer
- * scrolls page to the top of the current file.
- */
-GHA._attachSidebarAndFooter = function (child) {
-    if(!child.id || child.id.indexOf('diff-') == -1){
-        return;
-    }
-
-    var diffContainer = child;
-    var diffContainerBody = diffContainer.children[1];
-
-    var hLink = '<a title="Click me to scroll to the top of this file" href="#' + diffContainer.id + '">&nbsp;</a>';
-
-    var dfoot = document.createElement('div');
-    dfoot.className = 'ghAssistantFileFoot';
-    dfoot.innerHTML = hLink;
-    diffContainer.appendChild(dfoot);
-
-    var dsidebar = document.createElement('div');
-    dsidebar.className = 'ghAssistantFileSide';
-    dsidebar.innerHTML = hLink;
-    diffContainer.appendChild(dsidebar);
-};
-
-GHA.attachStorageWipeButtons = function () {
-    var footer = document.getElementById('footer');
-
-    var div = document.createElement('div');
-    var buttonAll = document.createElement('button');
-    buttonAll.innerHTML = 'Wipe ALL GHA storage';
-    buttonAll.className = 'minibutton ghAssistantStorageWipe';
-    buttonAll.addEventListener('click', function () {
-        var msg = "Really want to wipe *all* the GH Assistant storage (" + GHA.Storage.checkSize() + " entries)?";
-        if( window.confirm(msg) ) {
-            GHA.Storage.wipeStorage();
-            window.alert("Done");
-        }
-    });
-
-    var repoId = GHA.Storage._repoId;
-    var prefix = GHA.Storage._prefix + repoId;
-
-    var buttonRepo = document.createElement('button');
-    buttonRepo.innerHTML = 'Wipe GH Assistant storage for this repo';
-    buttonRepo.className = 'minibutton ghAssistantStorageWipe';
-    buttonRepo.addEventListener('click', function () {
-        var msg = "Really want to wipe GH Assistant storage for " + repoId + " (" + GHA.Storage.checkSize(prefix) + " entries)?";
-        if( window.confirm(msg) ) {
-            GHA.Storage.wipeStorage(prefix);
-            window.alert("Done");
-        }
-    });
-
-    div.appendChild(buttonRepo);
-    div.appendChild(buttonAll);
-    footer.appendChild(div);
+    };
 };
 
 // =================================================================================================
 
-var GHAReviewStatusMarker = {
+gha.util.ReviewStatusMarker = {
     mark : function (diffContainerHeader, ghaClassName, ghaClassNameAlt) {
         // 1 remove 'Ok' if we're setting 'Fail' and the opposite as well
         // 2 add the class name for 'Fail' / 'Ok'
@@ -462,7 +484,7 @@ var GHAReviewStatusMarker = {
 
 // =================================================================================================
 
-var GHALocalStorage = function () {
+gha.classes.GHALocalStorage = function () {
 
     this._prefix = "__GHA__";
 
@@ -481,6 +503,7 @@ var GHALocalStorage = function () {
             this.saveState = this.loadState = this.clearState = function () {};
         }
     };
+
     /**
      * @param {String} filePath
      * @param {Integer} state 0 (fail), 1 (ok)
@@ -528,29 +551,27 @@ var GHALocalStorage = function () {
 
     this._getKeyFromObjId = function (filePath) {
         return this._prefix + this._objectId + filePath.replace(/\//g, '#');
-    }
-
-
+    };
 };
 
 // =================================================================================================
 
-var GHALocalStorageLoader = function (storage) {
+gha.classes.GHALocalStorageLoader = function (storage) {
 
     this._storage = storage;
 
     this.run = function () {
-        var diffContainers = GHA.getDiffContainers();
+        var diffContainers = gha.util.DomReader.getDiffContainers();
 
         for(var i=0, ii = diffContainers.length; i<ii; i++) {
-            this.updateStateFromStorage(diffContainers[i]);
+            this._updateStateFromStorage(diffContainers[i]);
         }
     };
 
-    this.updateStateFromStorage = function(diffContainer) {
+    this._updateStateFromStorage = function(diffContainer) {
         var diffContainerHeader = diffContainer.children[0];
 
-        var filePath = GHA._getFilePathFromDiffContainerHeader(diffContainerHeader);
+        var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
         var state = this._storage.loadState(filePath); // might be 0, 1 or undefined
 
         if(state != null) {
@@ -558,19 +579,23 @@ var GHALocalStorageLoader = function (storage) {
             var ghaClassName = 'ghAssistantButtonState' + text;
             var ghaClassNameAlt = 'ghAssistantButtonState' + (text === L10N.ok ? L10N.fail : L10N.ok);
 
-            GHAReviewStatusMarker.mark (diffContainerHeader, ghaClassName, ghaClassNameAlt);
+            gha.util.ReviewStatusMarker.mark (diffContainerHeader, ghaClassName, ghaClassNameAlt);
         }
     };
 };
 
 // =================================================================================================
 
-var DomUtil = {
+gha.util.DomUtil = {
     addCss : function (sCss) {
         var dStyle = document.createElement('style');
         dStyle.type = 'text/css';
         dStyle.appendChild(document.createTextNode(sCss));
         document.getElementsByTagName('head')[0].appendChild(dStyle);
+    },
+
+    insertAsFirstChild : function (element, parent) {
+        parent.insertBefore(element, parent.firstChild);
     }
 };
 
@@ -593,23 +618,23 @@ var main = function () {
     }
 
     // let's go
-    GHA.Storage = new GHALocalStorage();
-    GHA.Storage.init();
+    gha.instance.storage = new gha.classes.GHALocalStorage();
+    gha.instance.storage.init();
 
-    var storageLoader = new GHALocalStorageLoader(GHA.Storage);
+    var storageLoader = new gha.classes.GHALocalStorageLoader(gha.instance.storage);
     storageLoader.run();
 
-    GHA.attachGlobalCss();
-    GHA.attachToggleDisplayOnClickListeners();
+    gha.util.DomWriter.attachGlobalCss();
+    gha.util.DomWriter.attachToggleDisplayOnClickListeners();
     if(autoHide) {
-        GHA.toggleDisplayAll(false);
+        gha.util.VisibilityManager.toggleDisplayAll(false);
     }else if(autoHideLong) {
-        GHA.hideLongDiffs(CONFIG.hideFileWhenDiffGt);
+        gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffGt);
     }
-    GHA.attachCollapseExpandDiffsButton(autoHide);
+    gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
 
-    GHA.attachPerDiffFileFeatures();
-    GHA.attachStorageWipeButtons();
+    gha.util.DomWriter.attachPerDiffFileFeatures();
+    gha.util.DomWriter.attachStorageWipeButtons();
 };
 
 main();
