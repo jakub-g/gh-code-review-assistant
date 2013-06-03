@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.9.3.20130419
+// @version         0.9.4.20130603
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -50,6 +50,8 @@
 //  Fixed regression from 0.6.2 (reviewed file was not hiding on Fail/Ok click)
 // 0.9.3.20130419
 //  Major code refactor; fixed margin issue with inline comment button on the left
+// 0.9.4.20130603
+//  Do not hide files passed in the hash of the URL
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
@@ -362,6 +364,7 @@ gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
     var children = mainDiffDiv.children;
     var nbOfCommits = children.length;
 
+    var hashInUrl = document.location.hash.replace('#', '');
     for(var i=0, ii = nbOfCommits; i<ii; i++) {
         var child = children[i];
         if(!child.id || child.id.indexOf('diff-') == -1){
@@ -374,7 +377,8 @@ gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
         var diffStats = parseInt(diffContainer.children[0].children[0].children[0].firstChild.textContent, 10);
         //console.log(diffStats);
 
-        if(diffStats > minDiff){
+        var fileName = diffContainer.querySelector('.meta').getAttribute('data-path');
+        if(diffStats > minDiff && fileName != hashInUrl){
             diffContainerBody.style.display = 'none';
         }
     }
@@ -382,15 +386,19 @@ gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
 
 /**
  * Collapse/expand all the diffs on the current page.
+ * @param {Boolean} bVisible state after this invocation (true = hide items)
+ * @param {Boolean} bKeepItemFromUrlHash whether to skip hiding files that were passed by hash in the URL. Default false.
  */
-gha.util.VisibilityManager.toggleDisplayAll = function(bVisible) {
+gha.util.VisibilityManager.toggleDisplayAll = function(bVisible, bKeepItemFromUrlHash) {
 
+    var bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
     var nbOfCommits = children.length;
 
     var newDisplay = bVisible ? 'block' : 'none';
 
+    var hashInUrl = document.location.hash.replace('#', '');
     for(var i=0, ii = nbOfCommits; i<ii; i++) {
         var child = children[i];
         if(!child.id || child.id.indexOf('diff-') == -1){
@@ -399,7 +407,11 @@ gha.util.VisibilityManager.toggleDisplayAll = function(bVisible) {
 
         var diffContainer = child;
         var diffContainerBody = diffContainer.children[1];
+        var fileName = diffContainer.querySelector('.meta').getAttribute('data-path');
 
+        if (bKeepItemFromUrlHash && !bVisible && fileName == hashInUrl){
+            continue;
+        }
         diffContainerBody.style.display = newDisplay;
     }
 };
@@ -633,7 +645,7 @@ var main = function () {
     gha.util.DomWriter.attachGlobalCss();
     gha.util.DomWriter.attachToggleDisplayOnClickListeners();
     if(autoHide) {
-        gha.util.VisibilityManager.toggleDisplayAll(false);
+        gha.util.VisibilityManager.toggleDisplayAll(false, true);
     }else if(autoHideLong) {
         gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffGt);
     }
