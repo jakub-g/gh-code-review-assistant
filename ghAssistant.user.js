@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.9.4.20130603
+// @version         0.9.5.20130801
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -52,6 +52,8 @@
 //  Major code refactor; fixed margin issue with inline comment button on the left
 // 0.9.4.20130603
 //  Do not hide files passed in the hash of the URL
+// 0.9.5.20130801
+//  Bring back 'Wipe GHA storage' buttons that disappeared after GH markup change
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
@@ -317,7 +319,7 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 };
 
 gha.util.DomWriter.attachStorageWipeButtons = function () {
-    var footer = document.getElementById('footer');
+    var footer = document.querySelector('body > .container');
 
     var div = document.createElement('div');
     var buttonAll = document.createElement('button');
