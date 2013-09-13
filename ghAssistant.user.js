@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.9.5.20130801
+// @version         0.9.6.20130913
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -54,6 +54,10 @@
 //  Do not hide files passed in the hash of the URL
 // 0.9.5.20130801
 //  Bring back 'Wipe GHA storage' buttons that disappeared after GH markup change
+// 0.9.6.20130913
+//  After reviewing an item, the next item is not expanded if it was reviewed; first unreviewed is expanded.
+//  (Experimental, disabled) Add 'contenteditable' to be able to inline edit the code of the diffs (each line separately);
+//    edits are not saved, not preserved on refresh
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
@@ -137,6 +141,8 @@ gha.util.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerH
 // =================================================================================================
 
 gha.util.DomWriter = {};
+
+gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghAssistantButtonState';
 
 gha.util.DomWriter.attachGlobalCss = function () {
     var css = [];
@@ -352,6 +358,15 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     footer.appendChild(div);
 };
 
+gha.util.DomWriter.enableEditing = function () {
+    document.getElementById('files').setAttribute('contenteditable', true);
+    document.body.setAttribute('spellcheck', false); // needs to be set on BODY to not mark contenteditable elements in red
+    /*var items = document.querySelectorAll('td.diff-line-code');
+    for(var i=0, ii = items.length, item; item = items[i], i < ii; i++) {
+        item.setAttribute('contenteditable', true); // setting it on some parent elements results in not so good behavior in Firefox
+    }*/
+};
+
 // =================================================================================================
 
 gha.util.VisibilityManager = {};
@@ -451,8 +466,9 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
         var diffContainerBody = diffContainer.children[1];   // .data
         var currentDiffIdx = Number(diffContainer.id.replace('diff-',''));
 
-        var ghaClassName = 'ghAssistantButtonState' + text;
-        var ghaClassNameAlt = 'ghAssistantButtonState' + (text === L10N.ok ? L10N.fail : L10N.ok);
+        var cnBase = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var ghaClassName = cnBase + text;
+        var ghaClassNameAlt = cnBase + (text === L10N.ok ? L10N.fail : L10N.ok);
         var wasMarked = diffContainerHeader.className.indexOf(ghaClassName) > -1;
         var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
 
@@ -480,9 +496,9 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
             // scroll the page so that currently reviewed file is in the top
             document.location = '#diff-' + currentDiffIdx;
 
-            // expand the next file if it was hidden
-            var nextFileContainer = document.getElementById('diff-' + (currentDiffIdx+1));
-            if(nextFileContainer) {
+            // expand the next not-yet-reviewed file, if any (without looping to the beginning)
+            var nextFileContainer = gha.util.ReviewStatusMarker.findNextUnmarked(currentDiffIdx);
+            if (nextFileContainer) {
                 nextFileContainer.children[1].style.display = 'block';
             }
         }
@@ -497,9 +513,29 @@ gha.util.ReviewStatusMarker = {
         // 2 add the class name for 'Fail' / 'Ok'
         diffContainerHeader.className = diffContainerHeader.className.replace(ghaClassNameAlt, '') + " " + ghaClassName;
     },
+
     unmark : function (diffContainerHeader, ghaClassName) {
         // remove the added class name for 'Fail' / 'Ok'
         diffContainerHeader.className = diffContainerHeader.className.replace(ghaClassName, '');
+    },
+
+    findNextUnmarked : function (diffIdx) {
+        var cnBase = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var wasReviewed = true;
+        var fileContainer;
+
+        while (wasReviewed) {
+            ++diffIdx;
+            fileContainer = document.getElementById('diff-' + diffIdx);
+
+            if (!fileContainer) {
+                return null;
+            }
+            wasReviewed = fileContainer.children[0].className.indexOf(cnBase) != -1;
+            if (!wasReviewed) {
+                return fileContainer;
+            } // else continue the loop
+        }
     }
 };
 
@@ -655,6 +691,8 @@ var main = function () {
 
     gha.util.DomWriter.attachPerDiffFileFeatures();
     gha.util.DomWriter.attachStorageWipeButtons();
+
+    // gha.util.DomWriter.enableEditing();
 };
 
 main();
