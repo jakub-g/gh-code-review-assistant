@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.9.6.20130913
+// @version         0.10.0.20130913
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -58,13 +58,14 @@
 //  After reviewing an item, the next item is not expanded if it was reviewed; first unreviewed is expanded.
 //  (Experimental, disabled) Add 'contenteditable' to be able to inline edit the code of the diffs (each line separately);
 //    edits are not saved, not preserved on refresh
+// 0.10.0.20130913
+//  Support for navigating and executing all the buttons from keyboard.
+//  Upon finishing the review of a diff, the next item's to be reviewed filename gets focus.
+//  Updating the view accordingly on GHA storage wipe.
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
 //    To profile and see if something can be improved.
-// 2. Upon wiping current repo / all local storage things, also all the items on the current
-//    page should be visually restored to the normal state.
-// 3. Scroll upon changing reviewed state, and make the next item visible, only if the previous state was "not-reviewed".
 // 4. Storing CONFIG in the browser instead of the script (script should only provide defaults)
 
 // ============================================ CONFIG =============================================
@@ -147,21 +148,40 @@ gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghAssistantButtonState';
 gha.util.DomWriter.attachGlobalCss = function () {
     var css = [];
 
+    css.push('a.ghAssistantFileNameSpan {text-decoration: none; margin-left: -10px;  padding: 0 10px;}'); // so that the box's outline looks nicer when focused
+
     css.push('.ghAssistantButtonStateNormal {\
         background-image:   linear-gradient(to bottom, #fafafa, #eaeaea) !important;\
-        color: #555 !important;\
-        text-shadow: none !important;\
     }');
     css.push('.ghAssistantButtonStateOk {\
         background-image:   linear-gradient(to bottom, #333, #444) !important;\
-        color: #fff !important;\
         text-shadow: none !important;\
     }');
     css.push('.ghAssistantButtonStateFail {\
         background-image:   linear-gradient(to bottom, #833, #844) !important;\
-        color: #fff !important;\
         text-shadow: none !important;\
     }');
+
+    css.push('.ghAssistantButtonStateNormal a.ghAssistantFileNameSpan { color: #555 !important;}');
+    css.push('.ghAssistantButtonStateOk     a.ghAssistantFileNameSpan { color: #fff !important;}');
+    css.push('.ghAssistantButtonStateFail   a.ghAssistantFileNameSpan { color: #fff !important;}');
+
+    // we have border, let's tell Firefox not to add its default dotted outline
+    css.push('.minibutton:focus {outline: 0;}');
+
+    css.push('.ghAssistantButtonStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
+    css.push('.ghAssistantButtonStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
+    css.push('.ghAssistantButtonStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
+
+    // default GH CSS is suited only for their one button "view file", let's fix it as we add 2 more buttons
+    css.push('.ghAssistantButtonStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghAssistantButtonStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghAssistantButtonStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+
+    css.push('.ghAssistantFileNameSpan:focus {outline:0; border-radius:5px;}');
+    css.push('.ghAssistantButtonStateNormal .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghAssistantButtonStateFail   .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghAssistantButtonStateOk     .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
 
     css.push('.ghAssistantStorageWipe {\
         margin:40px 5px 20px 20px;\
@@ -186,15 +206,16 @@ gha.util.DomWriter.attachGlobalCss = function () {
             border-radius:0 0 0 10px;}\
         ');
 
-        css.push('.ghAssistantFileFoot:hover {\
+        css.push('.ghAssistantFileFoot > a:hover, .ghAssistantFileFoot > a:focus {\
             background-image: linear-gradient(' + CONFIG.sidebarColor2 + ', ' + CONFIG.sidebarColor1 + ');\
+            outline: 0;\
         }');
-        css.push('.ghAssistantFileSide:hover {\
+        css.push('.ghAssistantFileSide> a:hover {\
             background-image: linear-gradient(to right, ' + CONFIG.sidebarColor1 + ', ' + CONFIG.sidebarColor2 + ');\
         }');
 
-        css.push('.ghAssistantFileFoot a {display: block; height:100%;}');
-        css.push('.ghAssistantFileSide a {display: block; height:100%;}');
+        css.push('.ghAssistantFileFoot > a {display: block; height:100%;}');
+        css.push('.ghAssistantFileSide > a {display: block; height:100%;}');
 
         // override GH's CSS with the "+" button on the side to add the comments
         css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize)+'px} !important');
@@ -243,7 +264,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
 
     var newButton = document.createElement('a');
     newButton.className = 'minibutton';
-    newButton.href = '#';
+    newButton.tabIndex = 0;
 
     newButton.innerHTML = hiddenByDefault ? L10N.expandAll : L10N.collapseAll;
 
@@ -275,14 +296,39 @@ gha.util.DomWriter.attachPerDiffFileFeatures = function () {
 
     for(var i=0, ii = nbOfCommits; i<ii; i++) {
         var child = children[i];
+        if(!child.id) {
+            continue;
+        }
         if (CONFIG.enableReviewedButton) {
             gha.util.DomWriter._attachReviewStatusButton(child, L10N.ok);
             gha.util.DomWriter._attachReviewStatusButton(child, L10N.fail);
+            gha.util.DomWriter.makeFileNameKeyboardAccessible(child);
         }
         if (CONFIG.enableDiffSidebarAndFooter) {
             gha.util.DomWriter._attachSidebarAndFooter(child);
         }
     }
+};
+
+gha.util.DomWriter.makeFileNameKeyboardAccessible = function (child) {
+    var fileNameSpan = child.querySelector('.info > .js-selectable-text');
+    // turns out getting parent is impossible after changing outerHTML, let's do it now
+    var diffContainerBody = fileNameSpan.parentNode.parentNode.parentNode.children[1];
+    fileNameSpan.className += ' ghAssistantFileNameSpan';
+
+    // Yeah this is bad and fragile, but I don't want to create yet another button.
+    // Let's make this span be an anchor, so it magically gets support for executing 'onclick' from keyboard event
+    // See http://jakub-g.github.io/accessibility/onclick/
+    fileNameSpan.tabIndex = 0;
+    fileNameSpan.outerHTML = fileNameSpan.outerHTML.replace('span', 'a');
+
+    // Firefox bug (or feature): after writing to outerHTML, can't use the handle to 'fileNameSpan' to write 'href';
+    // it's discarded, probably the browser still think it's a span
+    child.querySelector('.ghAssistantFileNameSpan').href = 'javascript:void(0);';
+
+    // Ok, now we're keyboard-reachable, let's add an event listener then which shows/hides the diff
+    var handler = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
+    fileNameSpan.addEventListener('click', handler, false);
 };
 
 gha.util.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also cssClassNamePostfix*/) {
@@ -292,6 +338,8 @@ gha.util.DomWriter._attachReviewStatusButton = function (diffContainer, text /*a
 
     var newButton = document.createElement('a');
     newButton.className = 'minibutton';
+    newButton.href = "javascript:void(0)"; // crucial to make it launchable from keyboard
+    newButton.tabIndex = 0;
     newButton.innerHTML = text;
     newButton.addEventListener('click', gha.util.ClickHandlers.createReviewButtonHandler(text, diffContainer));
 
@@ -311,7 +359,7 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
     var diffContainer = child;
     var diffContainerBody = diffContainer.children[1];
 
-    var hLink = '<a title="' + L10N.sidebarFooterTooltip + '" href="#' + diffContainer.id + '">&nbsp;</a>';
+    var hLink = '<a tabIndex=0 title="' + L10N.sidebarFooterTooltip + '" href="#' + diffContainer.id + '">&nbsp;</a>';
 
     var dfoot = document.createElement('div');
     dfoot.className = 'ghAssistantFileFoot';
@@ -320,7 +368,7 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 
     var dsidebar = document.createElement('div');
     dsidebar.className = 'ghAssistantFileSide';
-    dsidebar.innerHTML = hLink;
+    dsidebar.innerHTML = hLink.replace('tabIndex=0', 'tabIndex=-1'); // let only footer be TAB-navigable, no need to have both
     diffContainer.appendChild(dsidebar);
 };
 
@@ -331,10 +379,11 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     var buttonAll = document.createElement('button');
     buttonAll.innerHTML = L10N.buttonWipeAllStorage;
     buttonAll.className = 'minibutton ghAssistantStorageWipe';
+    buttonAll.tabIndex = 0;
     buttonAll.addEventListener('click', function () {
         var msg = L10N.questionWipeAll + " (" + gha.instance.storage.checkSize() + " entries)?";
         if( window.confirm(msg) ) {
-            gha.instance.storage.wipeStorage();
+            gha.instance.storage.wipeStorage(null);
             window.alert(L10N.alertWipeDone);
         }
     });
@@ -345,6 +394,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     var buttonRepo = document.createElement('button');
     buttonRepo.innerHTML = L10N.buttonWipeRepoStorage;
     buttonRepo.className = 'minibutton ghAssistantStorageWipe';
+    buttonRepo.tabIndex = 0;
     buttonRepo.addEventListener('click', function () {
         var msg = L10N.questionWipeRepo + repoId + " (" + gha.instance.storage.checkSize(prefix) + " entries)?";
         if( window.confirm(msg) ) {
@@ -466,9 +516,9 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
         var diffContainerBody = diffContainer.children[1];   // .data
         var currentDiffIdx = Number(diffContainer.id.replace('diff-',''));
 
-        var cnBase = gha.util.DomWriter.ghaReviewButtonClassNameBase;
-        var ghaClassName = cnBase + text;
-        var ghaClassNameAlt = cnBase + (text === L10N.ok ? L10N.fail : L10N.ok);
+        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var ghaClassName = btnBaseClass + text;
+        var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
         var wasMarked = diffContainerHeader.className.indexOf(ghaClassName) > -1;
         var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
 
@@ -499,7 +549,11 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
             // expand the next not-yet-reviewed file, if any (without looping to the beginning)
             var nextFileContainer = gha.util.ReviewStatusMarker.findNextUnmarked(currentDiffIdx);
             if (nextFileContainer) {
+                // make the diff visible
                 nextFileContainer.children[1].style.display = 'block';
+
+                // move focus to the file name
+                nextFileContainer.querySelector('.ghAssistantFileNameSpan').focus();
             }
         }
     };
@@ -509,18 +563,21 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
 
 gha.util.ReviewStatusMarker = {
     mark : function (diffContainerHeader, ghaClassName, ghaClassNameAlt) {
+        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        // 0 remove 'Normal'
         // 1 remove 'Ok' if we're setting 'Fail' and the opposite as well
         // 2 add the class name for 'Fail' / 'Ok'
-        diffContainerHeader.className = diffContainerHeader.className.replace(ghaClassNameAlt, '') + " " + ghaClassName;
+        diffContainerHeader.className = diffContainerHeader.className.replace(btnBaseClass + "Normal",'').replace(ghaClassNameAlt, '') + " " + ghaClassName;
     },
 
     unmark : function (diffContainerHeader, ghaClassName) {
-        // remove the added class name for 'Fail' / 'Ok'
-        diffContainerHeader.className = diffContainerHeader.className.replace(ghaClassName, '');
+        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        // remove the added class name for 'Fail' / 'Ok', add class for 'Normal'
+        diffContainerHeader.className = diffContainerHeader.className.replace(ghaClassName, '') + " " + btnBaseClass + "Normal";
     },
 
     findNextUnmarked : function (diffIdx) {
-        var cnBase = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
         var wasReviewed = true;
         var fileContainer;
 
@@ -531,10 +588,22 @@ gha.util.ReviewStatusMarker = {
             if (!fileContainer) {
                 return null;
             }
-            wasReviewed = fileContainer.children[0].className.indexOf(cnBase) != -1;
+            var cn = fileContainer.children[0].className;
+            wasReviewed = (cn.indexOf(btnBaseClass + "Ok") != -1) || (cn.indexOf(btnBaseClass + "Fail") != -1);
             if (!wasReviewed) {
                 return fileContainer;
             } // else continue the loop
+        }
+    },
+
+    unmarkAll : function () {
+        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var diffContainers = gha.util.DomReader.getDiffContainers();
+
+        for(var i=0, ii = diffContainers.length; i<ii; i++) {
+            var diffContainerHeader = diffContainers[i].children[0];
+            gha.util.ReviewStatusMarker.unmark (diffContainerHeader, btnBaseClass + "Ok");
+            gha.util.ReviewStatusMarker.unmark (diffContainerHeader, btnBaseClass + "Fail");
         }
     }
 };
@@ -592,6 +661,8 @@ gha.classes.GHALocalStorage = function () {
                 window.localStorage.removeItem(key);
             }
         }
+
+        gha.util.ReviewStatusMarker.unmarkAll();
     };
 
     this.checkSize = function (arbitraryPrefix) {
@@ -631,12 +702,15 @@ gha.classes.GHALocalStorageLoader = function (storage) {
         var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
         var state = this._storage.loadState(filePath); // might be 0, 1 or undefined
 
+        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
         if(state != null) {
             var text = (state == 0) ? L10N.fail : L10N.ok;
-            var ghaClassName = 'ghAssistantButtonState' + text;
-            var ghaClassNameAlt = 'ghAssistantButtonState' + (text === L10N.ok ? L10N.fail : L10N.ok);
+            var ghaClassName = btnBaseClass + text;
+            var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
 
             gha.util.ReviewStatusMarker.mark (diffContainerHeader, ghaClassName, ghaClassNameAlt);
+        } else {
+            gha.util.ReviewStatusMarker.unmark (diffContainerHeader, null);
         }
     };
 };
