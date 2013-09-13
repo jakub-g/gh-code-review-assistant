@@ -42,7 +42,7 @@ Chrome
  1. You should see an installation prompt. Click "OK" (Install with Tampermonkey).
  1. GH Assistant should work right away.
 
-Opera
+Opera 12
 --
 
  1. Launch the following addresses to configure the browser: set the directory on your disk where to store UserScripts, and activate UserScripts on HTTPS (GitHub is served via HTTPS):
@@ -74,7 +74,7 @@ Open `Tampermonkey menu > Options`. Select the entry and choose "Trigger an upda
 
 Tampermonkey also checks for UserScripts updates periodically (configurable in extension's settings; default is 12h).
 
-Opera
+Opera 12
 --
 
 AFAIK you'll have to do it manually.
