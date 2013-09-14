@@ -13,6 +13,8 @@
 // @include         http*://github.com/*/*/compare/*
 // ==/UserScript==
 
+/*jshint -W043,scripturl:true */
+
 // Changelog:
 // 0.1
 //  initial version
@@ -270,7 +272,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
 
     var nowHidden = hiddenByDefault; // closure to keep state
     newButton.addEventListener('click', function(evt) {
-        if(nowHidden == true){
+        if(nowHidden){
             gha.util.VisibilityManager.toggleDisplayAll(true);
             nowHidden = false;
             newButton.innerHTML = L10N.collapseAll;
@@ -458,7 +460,7 @@ gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
  */
 gha.util.VisibilityManager.toggleDisplayAll = function(bVisible, bKeepItemFromUrlHash) {
 
-    var bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
+    bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
     var nbOfCommits = children.length;
@@ -671,7 +673,7 @@ gha.classes.GHALocalStorage = function () {
         var n = 0;
         for (var key in window.localStorage){
             if(key.slice(0, arbitraryPrefix.length) === arbitraryPrefix) {
-                n++
+                n++;
             }
         }
         return n;
@@ -703,8 +705,8 @@ gha.classes.GHALocalStorageLoader = function (storage) {
         var state = this._storage.loadState(filePath); // might be 0, 1 or undefined
 
         var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
-        if(state != null) {
-            var text = (state == 0) ? L10N.fail : L10N.ok;
+        if(state !== null) {
+            var text = (state === "0") ? L10N.fail : L10N.ok;
             var ghaClassName = btnBaseClass + text;
             var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
 
