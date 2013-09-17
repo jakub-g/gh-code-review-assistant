@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.10.0.20130913
+// @version         0.10.1.20130917
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -64,6 +64,8 @@
 //  Support for navigating and executing all the buttons from keyboard.
 //  Upon finishing the review of a diff, the next item's to be reviewed filename gets focus.
 //  Updating the view accordingly on GHA storage wipe.
+// 0.10.1.20130917
+//  Expand/collapse button was not keyboard-friendly. Fixed.
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
@@ -267,6 +269,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
     var newButton = document.createElement('a');
     newButton.className = 'minibutton';
     newButton.tabIndex = 0;
+    newButton.href = 'javascript:void(0);';
 
     newButton.innerHTML = hiddenByDefault ? L10N.expandAll : L10N.collapseAll;
 
