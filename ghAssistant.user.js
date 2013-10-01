@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.10.1.20130917
+// @version         0.10.2.20131001
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -66,6 +66,9 @@
 //  Updating the view accordingly on GHA storage wipe.
 // 0.10.1.20130917
 //  Expand/collapse button was not keyboard-friendly. Fixed.
+// 0.10.2.20131001
+//  Option to hide "Open in GitHub for Windows"
+
 
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
@@ -87,6 +90,9 @@ CONFIG.dontHideUnlessMoreThanFiles = 2;
 
 // Whether to show 'Reviewed' button next to each file
 CONFIG.enableReviewedButton = true;
+
+// Hide buttons "open this file in GitHub for Windows" next to each file.
+CONFIG.hideGitHubForWindowsButtons = false;
 
 // Whether to show sidebar and footer that scroll to the top of the file on click.
 // Below related look'n'feel config
@@ -222,7 +228,11 @@ gha.util.DomWriter.attachGlobalCss = function () {
         css.push('.ghAssistantFileSide > a {display: block; height:100%;}');
 
         // override GH's CSS with the "+" button on the side to add the comments
-        css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize)+'px} !important');
+        css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize)+'px !important; }');
+    }
+
+    if (CONFIG.hideGitHubForWindowsButtons) {
+        css.push('a[href^="github-windows://"] {display: none;}');
     }
 
     gha.util.DomUtil.addCss(css.join('\n'));
