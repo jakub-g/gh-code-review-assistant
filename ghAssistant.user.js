@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.10.2.20131001
+// @version         0.10.3.20131004
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -68,6 +68,9 @@
 //  Expand/collapse button was not keyboard-friendly. Fixed.
 // 0.10.2.20131001
 //  Option to hide "Open in GitHub for Windows"
+// 0.10.3.20131004
+//  Now if sth like #diff-046dc342b82cf4f293c2f533e24aeec2 is passed in the URL (as GH uses in some links),
+//  the proper file will not be hidden.
 
 
 // TODO
@@ -498,6 +501,22 @@ gha.util.VisibilityManager.toggleDisplayAll = function(bVisible, bKeepItemFromUr
     }
 };
 
+/**
+ * If there was something like #diff-046dc342b82cf4f293c2f533e24aeec2 passed in the URL, it points to a specific
+ * file that should be made visible.
+ */
+gha.util.VisibilityManager.restoreElementsFromHash = function() {
+    var hash = document.location.hash.replace('#', '');
+    if (hash.match("diff-[0-9a-f]{32}")) {
+        var hashAnchor = document.querySelector("a[name='" + hash + "']");
+        if (hashAnchor) {
+            var diffContainer = hashAnchor.nextElementSibling;
+            var diffContainerBody = diffContainer.children[1];
+            diffContainerBody.style.display = "block";
+        }
+    }
+};
+
 // =================================================================================================
 
 gha.util.ClickHandlers = {};
@@ -776,6 +795,7 @@ var main = function () {
     }else if(autoHideLong) {
         gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffGt);
     }
+    gha.util.VisibilityManager.restoreElementsFromHash();
     gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
 
     gha.util.DomWriter.attachPerDiffFileFeatures();
