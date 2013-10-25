@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.10.3.20131004
+// @version         0.10.4.20131025
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -71,6 +71,8 @@
 // 0.10.3.20131004
 //  Now if sth like #diff-046dc342b82cf4f293c2f533e24aeec2 is passed in the URL (as GH uses in some links),
 //  the proper file will not be hidden.
+// 0.10.4.20131025
+//  When loading state from local storage, never-reviewed items were sometimes mistakenly marked as reviewed.
 
 
 // TODO
@@ -737,7 +739,7 @@ gha.classes.GHALocalStorageLoader = function (storage) {
         var state = this._storage.loadState(filePath); // might be 0, 1 or undefined
 
         var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
-        if(state !== null) {
+        if(state != null) {
             var text = (state === "0") ? L10N.fail : L10N.ok;
             var ghaClassName = btnBaseClass + text;
             var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
