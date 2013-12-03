@@ -92,3 +92,13 @@ I like it!
 Sign up to Usescripts.org and [rate the script and/or become a fan](http://userscripts.org/scripts/show/153049).
 
 Contributions and feature requests are welcome.
+
+You may also like some other of my userscripts:
+
+- GitHub: hide pull requests from issues page
+- GitHub: go to pull request branch from pull request
+- Wiki language switcher
+- and several other
+
+See them on [Github](https://github.com/jakub-g/greasemonkey-userscripts)
+or [Userscripts.org](http://userscripts.org/users/204917/scripts)
