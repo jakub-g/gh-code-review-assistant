@@ -1,6 +1,10 @@
 # GitHub Code Review Assistant
   ----------------------------
 
+*Note: GitHub is a trademark of GitHub Inc. The developer of this extension is NOT affiliated with GitHub, Inc.*
+
+*This is an unofficial browser extension that is meant to enhance the experience of browsing pages in github.com domain.*
+
 What's that?
 ============
 
