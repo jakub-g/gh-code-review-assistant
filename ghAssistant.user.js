@@ -8,9 +8,9 @@
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
 // @userscriptsOrg  http://userscripts.org/scripts/show/153049
 // @grant           none
-// @include         http*://github.com/*/*/commit/*
-// @include         http*://github.com/*/*/pull/*
-// @include         http*://github.com/*/*/compare/*
+// @include         https://github.com/*/*/commit/*
+// @include         https://github.com/*/*/pull/*
+// @include         https://github.com/*/*/compare/*
 // ==/UserScript==
 
 /*jshint -W043,scripturl:true */
@@ -114,12 +114,20 @@ var L10N = {
     fail: 'Fail',
     expandAll: 'Expand all',
     collapseAll: 'Collapse all',
-    buttonWipeAllStorage: 'Wipe ALL GHA storage',
-    buttonWipeRepoStorage: 'Wipe GH Assistant storage for this repo',
+    wipeStorageText : 'Wipe GHA storage:',
+    buttonWipeAllStorage: 'all',
+    buttonWipeRepoStorage: 'this repo',
+    buttonWipeCurrentUrlStorage: 'this URL',
+    buttonWipeCurrentCommitStorage: 'this commit',
+    noEntriesFound: "No GHA entries to be deleted ",
+    noEntriesFoundPrefix: "No GHA entries to be deleted matching the prefix ",
     alertWipeDone: "Done",
     sidebarFooterTooltip: "Click me to scroll to the top of this file",
     questionWipeAll: "Really want to wipe *all* the GH Assistant storage ",
     questionWipeRepo: "Really want to wipe GH Assistant storage for the repo ",
+    questionWipeEntry: "Really want to wipe GH Assistant storage for current entity: ",
+    orphanedCommitsInfo: "Note though that storage on *commits* is repo-independent in order " +
+        "to work across the forks.\nThere are currently %ORPH orphaned commit-related entries.",
 };
 
 var gha = {
@@ -129,6 +137,12 @@ var gha = {
 };
 
 // =================================================================================================
+
+
+var pageId = document.location.pathname.replace(/\//g,'#'); // for easier regexes
+var isCommit  = pageId.match(/^#.*?#.*?#commit/);
+var isPull    = pageId.match(/^#.*?#.*?#pull/);
+var isCompare = pageId.match(/^#.*?#.*?#compare/);
 
 gha.util.DomReader = {};
 
@@ -392,37 +406,96 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
     diffContainer.appendChild(dsidebar);
 };
 
+
+createButton = function (cfg) {
+    var storage = gha.instance.storage;
+
+    var btn = document.createElement('button');
+
+    btn.disabled = cfg.disabled;
+    btn.innerHTML = cfg.text;
+    btn.className = 'minibutton ghAssistantStorageWipe';
+    btn.tabIndex = 0;
+
+    if (!cfg.wipeMsg) {
+        return btn;
+    }
+
+    btn.addEventListener('click', function () {
+        var prefix = cfg.storagePrefix;
+        var msg;
+
+        var nItemsToBeDeleted = storage.checkSize(prefix);
+        if (nItemsToBeDeleted === 0) {
+            if (prefix) {
+                msg = L10N.noEntriesFoundPrefix + prefix.replace(storage._prefix, "");
+                if (isCommit) {
+                    var nOrphanedCommits = storage.checkOrphanedCommits();
+                    if (nOrphanedCommits > 0) {
+                        msg += "\n\n" + L10N.orphanedCommitsInfo.replace("%ORPH", nOrphanedCommits);
+                    }
+                }
+            } else {
+                msg = L10N.noEntriesFound;
+            }
+            window.alert(msg);
+            return;
+        }
+
+        msg = cfg.wipeMsg().replace("%TODEL", "(" + nItemsToBeDeleted + " entries)");
+        if( window.confirm(msg) ) {
+            storage.wipeStorage(cfg.storagePrefix);
+            window.alert(L10N.alertWipeDone);
+        }
+    });
+
+    return btn;
+}
+
 gha.util.DomWriter.attachStorageWipeButtons = function () {
     var footer = document.querySelector('body > .container');
 
     var div = document.createElement('div');
-    var buttonAll = document.createElement('button');
-    buttonAll.innerHTML = L10N.buttonWipeAllStorage;
-    buttonAll.className = 'minibutton ghAssistantStorageWipe';
-    buttonAll.tabIndex = 0;
-    buttonAll.addEventListener('click', function () {
-        var msg = L10N.questionWipeAll + " (" + gha.instance.storage.checkSize() + " entries)?";
-        if( window.confirm(msg) ) {
-            gha.instance.storage.wipeStorage(null);
-            window.alert(L10N.alertWipeDone);
+    var storage = gha.instance.storage;
+
+    var buttonAll = createButton({
+        text : L10N.buttonWipeAllStorage,
+        storagePrefix : null,
+        wipeMsg : function () {
+            return L10N.questionWipeAll + " \n%TODEL?";
         }
     });
 
-    var repoId = gha.instance.storage._repoId;
-    var prefix = gha.instance.storage._prefix + repoId;
+    var buttonRepo = createButton({
+        text : L10N.buttonWipeRepoStorage,
+        storagePrefix : storage._repoId,
+        wipeMsg : function () {
+            var msg = L10N.questionWipeRepo + storage._repoId + " \n%TODEL?";
 
-    var buttonRepo = document.createElement('button');
-    buttonRepo.innerHTML = L10N.buttonWipeRepoStorage;
-    buttonRepo.className = 'minibutton ghAssistantStorageWipe';
-    buttonRepo.tabIndex = 0;
-    buttonRepo.addEventListener('click', function () {
-        var msg = L10N.questionWipeRepo + repoId + " (" + gha.instance.storage.checkSize(prefix) + " entries)?";
-        if( window.confirm(msg) ) {
-            gha.instance.storage.wipeStorage(prefix);
-            window.alert(L10N.alertWipeDone);
+            var nOrphanedCommits = storage.checkOrphanedCommits();
+            if (nOrphanedCommits > 0) {
+                msg += "\n\n" + L10N.orphanedCommitsInfo.replace("%ORPH", nOrphanedCommits);
+            }
+
+            return msg;
         }
     });
 
+    var buttonCurrentEntity = createButton({
+        text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
+        storagePrefix : storage._objectId,
+        wipeMsg : function () {
+            return L10N.questionWipeEntry  + storage._objectId + " \n%TODEL?";
+        }
+    });
+
+    var buttonInfo = createButton({
+        text : L10N.wipeStorageText,
+        disabled : true
+    });
+
+    div.appendChild(buttonInfo);
+    div.appendChild(buttonCurrentEntity);
     div.appendChild(buttonRepo);
     div.appendChild(buttonAll);
     footer.appendChild(div);
@@ -655,11 +728,16 @@ gha.classes.GHALocalStorage = function () {
     this._repoId = null;
 
     this.init = function () {
-        var loc = document.location.pathname.replace(/\//g,'#'); // for easier regexes
-        var matches = loc.match(/^#([a-z0-9\-]+#[a-z0-9\-]+)#(commit|pull|compare)#([a-z0-9\-]+)/);
+        var matches = pageId.match(/^#([a-z0-9\-]+#[a-z0-9\-]+)#(?:commit|pull|compare)#([a-z0-9\-]+)/);
         if (matches) {
-            this._objectId = matches[0];
-            this._repoId = "#" + matches[1]; // we want repoId to be a leading substring of objectId
+            // we want repoId to be a leading substring of objectId
+            this._objectId = matches[0];     // sth like "#ariatemplates#ariatemplates#pull#1060"
+            this._repoId = "#" + matches[1]; // sth like "#ariatemplates#ariatemplates"
+
+            if (isCommit) {
+                this._objectId = "#commit#" + matches[2];
+            }
+            //debugger;
         } else {
             console.error("Unable to create a local storage key for " + loc);
             this.saveState = this.loadState = this.clearState = function () {};
@@ -690,7 +768,7 @@ gha.classes.GHALocalStorage = function () {
     };
 
     this.wipeStorage = function (arbitraryPrefix) {
-        arbitraryPrefix = arbitraryPrefix || this._prefix;
+        arbitraryPrefix = this._prefix + (arbitraryPrefix || "");
 
         for (var key in window.localStorage){
             if(key.slice(0, arbitraryPrefix.length) === arbitraryPrefix) {
@@ -702,7 +780,7 @@ gha.classes.GHALocalStorage = function () {
     };
 
     this.checkSize = function (arbitraryPrefix) {
-        arbitraryPrefix = arbitraryPrefix || this._prefix;
+        arbitraryPrefix = this._prefix + (arbitraryPrefix || "");
 
         var n = 0;
         for (var key in window.localStorage){
@@ -713,8 +791,12 @@ gha.classes.GHALocalStorage = function () {
         return n;
     };
 
+    this.checkOrphanedCommits = function () {
+        return this.checkSize("#commit#");
+    };
+
     this._getKeyFromObjId = function (filePath) {
-        return this._prefix + this._objectId + filePath.replace(/\//g, '#');
+        return this._prefix + this._objectId + "#" + filePath.replace(/\//g, '#');
     };
 };
 
