@@ -589,6 +589,12 @@ gha.util.VisibilityManager.restoreElementsFromHash = function() {
             var diffContainerBody = diffContainer.children[1];
             diffContainerBody.style.display = "block";
         }
+    } else if ( hash.match("diff-[0-9]{1,3}")) {
+        var diffContainer = document.querySelector("div#" + hash);
+        if (diffContainer) {
+            var diffContainerBody = diffContainer.children[1];
+            diffContainerBody.style.display = "block";
+        }
     }
 };
 
