@@ -455,17 +455,29 @@ createButton = function (cfg) {
                 msg = L10N.noEntriesFound;
             }
             window.alert(msg);
+            setTimeout(clearSlowEventsHack, 0);
             return;
-        }
-
-        msg = cfg.wipeMsg().replace("%TODEL", "(" + nItemsToBeDeleted + " entries)");
-        if( window.confirm(msg) ) {
-            storage.wipeStorage(cfg.storagePrefix);
-            window.alert(L10N.alertWipeDone);
+        } else {
+            msg = cfg.wipeMsg().replace("%TODEL", "(" + nItemsToBeDeleted + " entries)");
+            if( window.confirm(msg) ) {
+                storage.wipeStorage(cfg.storagePrefix);
+                window.alert(L10N.alertWipeDone);
+            }
+            setTimeout(clearSlowEventsHack, 0);
         }
     });
 
     return btn;
+}
+
+/*
+ * GitHub logs data about slow events into local storage and uploads them shortly after that
+ * to their servers for inspection. It's likely this will happen when clicking "Wipe GHA storage"
+ * buttons due to blocking nature of prompt and alter. Let's remove that data entries not to
+ * upload data connected to GHA
+ */
+clearSlowEventsHack = function () {
+    window.localStorage.removeItem("slow-events");
 }
 
 gha.util.DomWriter.attachStorageWipeButtons = function () {
@@ -806,15 +818,23 @@ gha.classes.GHALocalStorage = function () {
     };
 
     this.checkSize = function (arbitraryPrefix) {
+        return this.getEntries(arbitraryPrefix).length;
+    };
+
+    this.getEntries = function (arbitraryPrefix) {
         arbitraryPrefix = this._prefix + (arbitraryPrefix || "");
 
-        var n = 0;
+        var out = {
+            entries : {},
+            length : 0
+        };
         for (var key in window.localStorage){
-            if(key.slice(0, arbitraryPrefix.length) === arbitraryPrefix) {
-                n++;
+            if (key.slice(0, arbitraryPrefix.length) === arbitraryPrefix) {
+                out.entries[key] = window.localStorage[key];
+                out.length++;
             }
         }
-        return n;
+        return out;
     };
 
     this.checkOrphanedCommits = function () {
