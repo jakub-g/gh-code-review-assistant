@@ -735,7 +735,11 @@ gha.classes.GHALocalStorage = function () {
             this._repoId = "#" + matches[1]; // sth like "#ariatemplates#ariatemplates"
 
             if (isCommit) {
-                this._objectId = "#commit#" + matches[2];
+                // Use canonical SHA1 of the commit, the URL might contain shortened one
+                // or sth like some-other-sha^^ etc.
+                // However fallback to matches[2] just in case GH changed the selector or something
+                var commitSha1 = document.querySelector('.sha').textContent;
+                this._objectId = "#commit#" + (commitSha1 || matches[2]);
             }
             //debugger;
         } else {
