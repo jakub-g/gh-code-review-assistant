@@ -15,7 +15,7 @@ Github Assistant is a UserScript, i.e. a piece of JavaScript code, that runs in 
 1. Configure the script to collapse the files automatically if there are >*N* files or the diff is >*M* lines.
 1. A footer and sidebar are added next to each file to quickly jump to its top.
 
-Works on /commit, /pull, /compare pages.
+Works on `/commit`, `/pull`, `/compare` pages.
 
 Preview
 =======
@@ -106,3 +106,16 @@ You may also like some other of my userscripts:
 
 See them on [Github](https://github.com/jakub-g/greasemonkey-userscripts)
 or [Userscripts.org](http://userscripts.org/users/204917/scripts)
+
+Author's homepage: [jakub-g.github.io](http://jakub-g.github.io)
+
+Credits
+=======
+
+This extension was developed using the following Firefox extensions:
+
+* [Firebug](https://addons.mozilla.org/en-US/firefox/addon/firebug/)
+* [Greasemonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/)
+* [FireStorage Plus!](https://addons.mozilla.org/en-US/firefox/addon/firestorage-plus/)
+
+Credits to all the respective authors.
