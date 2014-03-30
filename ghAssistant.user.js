@@ -144,6 +144,7 @@ var L10N = {
     questionWipeEntry: "Really want to wipe GH Assistant storage for current entity: ",
     orphanedCommitsInfo: "Note though that storage on *commits* is repo-independent in order " +
         "to work across the forks.\nThere are currently %ORPH orphaned commit-related entries.",
+    hashInUrlUpdated: "Code review status was exported to the hash in your URL",
 };
 
 var gha = {
@@ -422,20 +423,24 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
     diffContainer.appendChild(dsidebar);
 };
 
-
 createButton = function (cfg) {
     var storage = gha.instance.storage;
 
     var btn = document.createElement('button');
 
-    btn.disabled = cfg.disabled;
-    btn.innerHTML = cfg.text;
+    btn.disabled = !!cfg.disabled;
+    btn.style.cssText = cfg.style || "";
+    btn.innerHTML = cfg.text || "";
     btn.className = 'minibutton ghAssistantStorageWipe';
     btn.tabIndex = 0;
 
-    if (!cfg.wipeMsg) {
-        return btn;
-    }
+    return btn;
+};
+
+createWipeButton = function (cfg) {
+    var storage = gha.instance.storage;
+
+    var btn = createButton(cfg);
 
     btn.addEventListener('click', function () {
         var prefix = cfg.storagePrefix;
@@ -486,15 +491,21 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     var div = document.createElement('div');
     var storage = gha.instance.storage;
 
-    var buttonAll = createButton({
-        text : L10N.buttonWipeAllStorage,
-        storagePrefix : null,
+
+    var buttonInfo = createButton({
+        text : L10N.wipeStorageText,
+        disabled : true
+    });
+
+    var buttonCurrentEntity = createWipeButton({
+        text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
+        storagePrefix : storage._objectId,
         wipeMsg : function () {
-            return L10N.questionWipeAll + " \n%TODEL?";
+            return L10N.questionWipeEntry  + storage._objectId + " \n%TODEL?";
         }
     });
 
-    var buttonRepo = createButton({
+    var buttonRepo = createWipeButton({
         text : L10N.buttonWipeRepoStorage,
         storagePrefix : storage._repoId,
         wipeMsg : function () {
@@ -509,24 +520,63 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         }
     });
 
-    var buttonCurrentEntity = createButton({
-        text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
-        storagePrefix : storage._objectId,
+    var buttonAll = createWipeButton({
+        text : L10N.buttonWipeAllStorage,
+        storagePrefix : null,
         wipeMsg : function () {
-            return L10N.questionWipeEntry  + storage._objectId + " \n%TODEL?";
+            return L10N.questionWipeAll + " \n%TODEL?";
         }
     });
 
-    var buttonInfo = createButton({
-        text : L10N.wipeStorageText,
-        disabled : true
+    var buttonSerialize = createButton({
+        text : "Export code review status",
+        style : "float:right"
+    });
+    buttonSerialize.addEventListener('click', function () {
+        var status = gha.instance.storage.getEntriesForCurrentContext();
+        if (status.length === 0) {
+            alert("Nothing to export for current URL");
+            return;
+        }
+
+        var entries = status.entries;
+        var fullPrefix = gha.instance.storage.getFullPrefixForCurrentContext();
+
+        // strip the boilerplate and save to intermediate object
+        var shortStatus = [];
+        for (var key in entries) {
+            var shortKey = key.replace(fullPrefix, "");
+            shortStatus.push({
+                key : shortKey,
+                value : entries[key]
+            });
+        }
+
+        var serialized = shortStatus.map(function (item){
+            return item.key + ":" + item.value
+        }).join("&");
+
+        var hashChunk = window.encodeURIComponent(";GHADATA=" + serialized);
+        var hashIdx = window.location.hash.indexOf(";GHADATA");
+        if (hashIdx >= 0) {
+            // overwrite instead of appending multiple times
+            window.location.hash = window.location.hash.slice(0, hashIdx) + hashChunk;
+        } else {
+            window.location.hash += hashChunk;
+        }
+        alert(L10N.hashInUrlUpdated);
     });
 
     div.appendChild(buttonInfo);
     div.appendChild(buttonCurrentEntity);
     div.appendChild(buttonRepo);
     div.appendChild(buttonAll);
+
+    div.appendChild(buttonSerialize);
+
     footer.appendChild(div);
+
+
 };
 
 gha.util.DomWriter.enableEditing = function () {
@@ -610,15 +660,16 @@ gha.util.VisibilityManager.toggleDisplayAll = function(bVisible, bKeepItemFromUr
  */
 gha.util.VisibilityManager.restoreElementsFromHash = function() {
     var hash = document.location.hash.replace('#', '');
-    if (hash.match("diff-[0-9a-f]{32}")) {
-        var hashAnchor = document.querySelector("a[name='" + hash + "']");
+    var match; // using match[0] instead of hash in querySelector due to possible ;GHADATA in hash
+    if (match = hash.match("diff-[0-9a-f]{32}")) {
+        var hashAnchor = document.querySelector("a[name='" + match[0] + "']");
         if (hashAnchor) {
             var diffContainer = hashAnchor.nextElementSibling;
             var diffContainerBody = diffContainer.children[1];
             diffContainerBody.style.display = "block";
         }
-    } else if ( hash.match("diff-[0-9]{1,3}")) {
-        var diffContainer = document.querySelector("div#" + hash);
+    } else if (match = hash.match("diff-[0-9]{1,3}")) {
+        var diffContainer = document.querySelector("div#" + match[0]);
         if (diffContainer) {
             var diffContainerBody = diffContainer.children[1];
             diffContainerBody.style.display = "block";
@@ -837,12 +888,20 @@ gha.classes.GHALocalStorage = function () {
         return out;
     };
 
+    this.getEntriesForCurrentContext = function () {
+        return this.getEntries(this._objectId);
+    };
+
+    this.getFullPrefixForCurrentContext = function () {
+        return this._prefix + this._objectId;
+    };
+
     this.checkOrphanedCommits = function () {
         return this.checkSize("#commit#");
     };
 
     this._getKeyFromObjId = function (filePath) {
-        return this._prefix + this._objectId + "#" + filePath.replace(/\//g, '#');
+        return this.getFullPrefixForCurrentContext() + "#" + filePath.replace(/\//g, '#');
     };
 };
 
