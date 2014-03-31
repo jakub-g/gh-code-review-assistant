@@ -491,16 +491,19 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
         }
 
         var ghaData = hash.slice(idx + magic.length);
-        var aoDeserialized = ghaData.split("&").map(function (sKeyAndValue) {
+        var asDeserialized = ghaData.split("&");
+        var storageHashmap = {};
+        asDeserialized.forEach(function (sKeyAndValue) {
             var data = sKeyAndValue.split(":");
-            return {
-                key : data[0],
-                value : data[1]
-            }
-        }); // [ {key: .. value: ..}, {key: .. value: ..} ]
+            var key = data[0];
+            var value = data[1];
+            var filePath = key.replace(/#/g, "/");
+            storageHashmap[filePath] = value;
+        });
 
-        console.dir(aoDeserialized);
-        debugger
+        new gha.classes.GHALocalStorageLoader({loadState : function (filePath) {
+            return storageHashmap[filePath];
+        }}).run();
     });
 
     return btn;
@@ -938,7 +941,7 @@ gha.classes.GHALocalStorage = function () {
     };
 
     this.getFullPrefixForCurrentContext = function () {
-        return this._prefix + this._objectId;
+        return this._prefix + this._objectId + "#";
     };
 
     this.checkOrphanedCommits = function () {
@@ -946,7 +949,7 @@ gha.classes.GHALocalStorage = function () {
     };
 
     this._getKeyFromObjId = function (filePath) {
-        return this.getFullPrefixForCurrentContext() + "#" + filePath.replace(/\//g, '#');
+        return this.getFullPrefixForCurrentContext() + filePath.replace(/\//g, '#');
     };
 };
 
