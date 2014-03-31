@@ -229,8 +229,8 @@ gha.util.DomWriter.attachGlobalCss = function () {
     css.push('.ghAssistantButtonStateFail   .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
     css.push('.ghAssistantButtonStateOk     .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
 
-    css.push('.ghAssistantStorageWipe {\
-        margin:40px 5px 20px 20px;\
+    css.push('.ghAssistantBottomButton {\
+        margin:40px 5px 20px 15px;\
     }');
 
     if (CONFIG.enableDiffSidebarAndFooter) {
@@ -431,8 +431,8 @@ gha.util.StatusExporter = {};
 gha.util.StatusExporter.MAGIC_STRING = ";GHADATA=";
 
 gha.util.StatusExporter.createButtonSerialize = function () {
-    var btn = gha.util.Storage.createButton({
-        text : "Export status to URL",
+    var btn = gha.util.DomUtil.createButton({
+        text : "Export to URL",
         style : "float:right"
     });
 
@@ -476,8 +476,8 @@ gha.util.StatusExporter.createButtonSerialize = function () {
 };
 
 gha.util.StatusExporter.createButtonDeserialize = function () {
-    var btn = gha.util.Storage.createButton({
-        text : "Import status from URL",
+    var btn = gha.util.DomUtil.createButton({
+        text : "Import from URL",
         style : "float:right"
     });
 
@@ -506,14 +506,12 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
     return btn;
 };
 
-gha.util.DomWriter.attachStorageWipeButtons = function () {
-    var footer = document.querySelector('body > .container');
+// =================================================================================================
 
-    var div = document.createElement('div');
+gha.util.DomWriter.attachStorageWipeButtons = function (div) {
     var storage = gha.instance.storage;
 
-
-    var buttonInfo = gha.util.Storage.createButton({
+    var buttonInfo = gha.util.DomUtil.createButton({
         text : L10N.wipeStorageText,
         disabled : true
     });
@@ -553,14 +551,21 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     div.appendChild(buttonCurrentEntity);
     div.appendChild(buttonRepo);
     div.appendChild(buttonAll);
+};
 
+gha.util.DomWriter.attachStatusImportExportButtons = function (div) {
+    var buttonInfo = gha.util.DomUtil.createButton({
+        text : "Code review status:",
+        style : "float:right",
+        disabled : true
+    });
     var buttonSerialize = gha.util.StatusExporter.createButtonSerialize();
     var buttonDeserialize = gha.util.StatusExporter.createButtonDeserialize();
 
-    div.appendChild(buttonSerialize);
+    // they're floated right
     div.appendChild(buttonDeserialize);
-
-    footer.appendChild(div);
+    div.appendChild(buttonSerialize);
+    div.appendChild(buttonInfo);
 };
 
 gha.util.DomWriter.enableEditing = function () {
@@ -576,22 +581,10 @@ gha.util.DomWriter.enableEditing = function () {
 
 gha.util.Storage = {};
 
-gha.util.Storage.createButton = function (cfg) {
-    var btn = document.createElement('button');
-
-    btn.disabled = !!cfg.disabled;
-    btn.style.cssText = cfg.style || "";
-    btn.innerHTML = cfg.text || "";
-    btn.className = 'minibutton ghAssistantStorageWipe';
-    btn.tabIndex = 0;
-
-    return btn;
-};
-
 gha.util.Storage.createWipeButton = function (cfg) {
     var storage = gha.instance.storage;
 
-    var btn = gha.util.Storage.createButton(cfg);
+    var btn = gha.util.DomUtil.createButton(cfg);
 
     btn.addEventListener('click', function () {
         var prefix = cfg.storagePrefix;
@@ -1002,7 +995,19 @@ gha.util.DomUtil = {
 
     insertAsFirstChild : function (element, parent) {
         parent.insertBefore(element, parent.firstChild);
-    }
+    },
+
+    createButton : function (cfg) {
+        var btn = document.createElement('button');
+
+        btn.disabled = !!cfg.disabled;
+        btn.style.cssText = cfg.style || "";
+        btn.innerHTML = cfg.text || "";
+        btn.className = 'minibutton ghAssistantBottomButton';
+        btn.tabIndex = 0;
+
+        return btn;
+    },
 };
 
 // =================================================================================================
@@ -1040,8 +1045,12 @@ var main = function () {
     gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
 
     gha.util.DomWriter.attachPerDiffFileFeatures();
-    gha.util.DomWriter.attachStorageWipeButtons();
 
+    var footer = document.querySelector('body > .container');
+    var div = document.createElement('div');
+    gha.util.DomWriter.attachStorageWipeButtons(div);
+    gha.util.DomWriter.attachStatusImportExportButtons(div);
+    footer.appendChild(div);
     // gha.util.DomWriter.enableEditing();
 };
 
