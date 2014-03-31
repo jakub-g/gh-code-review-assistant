@@ -129,6 +129,7 @@ var L10N = {
     ok: 'Ok',
     fail: 'Fail',
     expandAll: 'Expand all',
+    expandUnreviewed: 'Expand unreviewed',
     collapseAll: 'Collapse all',
     wipeStorageText : 'Wipe GHA storage:',
     buttonWipeAllStorage: 'all',
@@ -313,27 +314,30 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
     var buttonBarContainer = document.querySelector('#toc');
     var buttonBar = buttonBarContainer.children[0];
 
-    var newButton = document.createElement('a');
-    newButton.className = 'minibutton';
-    newButton.tabIndex = 0;
-    newButton.href = 'javascript:void(0);';
+    var btn = document.createElement('a');
+    btn.className = 'minibutton';
+    btn.tabIndex = 0;
+    btn.href = 'javascript:void(0);';
 
-    newButton.innerHTML = hiddenByDefault ? L10N.expandAll : L10N.collapseAll;
-
-    var nowHidden = hiddenByDefault; // closure to keep state
-    newButton.addEventListener('click', function(evt) {
-        if(nowHidden){
-            gha.util.VisibilityManager.toggleDisplayAll(true);
-            nowHidden = false;
-            newButton.innerHTML = L10N.collapseAll;
-        } else {
-            gha.util.VisibilityManager.toggleDisplayAll(false);
-            nowHidden = true;
-            newButton.innerHTML = L10N.expandAll;
+    var nowVisible = 1 - hiddenByDefault; // closure to keep state; boolean to int conversion
+    btn.addEventListener('click', function(evt) {
+        // change the state between 0:all hidden, 1:all visible, 2:unreviewed visible
+        if (nowVisible == 0) {
+            nowVisible = 2;
+            btn.innerHTML = L10N.expandAll;
+        } else if (nowVisible == 2){
+            nowVisible = 1;
+            btn.innerHTML = L10N.collapseAll;
+        } else if (nowVisible == 1){
+            nowVisible = 0;
+            btn.innerHTML = L10N.expandUnreviewed;
         }
+        gha.util.VisibilityManager.toggleDisplayAll(nowVisible);
     });
+    // the innerHTML must be in line with the above function's logic
+    btn.innerHTML = (nowVisible) ? L10N.collapseAll : L10N.expandUnreviewed;
 
-    buttonBar.appendChild(newButton);
+    buttonBar.appendChild(btn);
 };
 
 /**
@@ -679,33 +683,44 @@ gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
 
 /**
  * Collapse/expand all the diffs on the current page.
- * @param {Boolean} bVisible state after this invocation (true = hide items)
+ * @param {Integer} iVisible state after this invocation (0 none, 1 all, 2 unreviewed)
  * @param {Boolean} bKeepItemFromUrlHash whether to skip hiding files that were passed by hash in the URL. Default false.
  */
-gha.util.VisibilityManager.toggleDisplayAll = function(bVisible, bKeepItemFromUrlHash) {
+gha.util.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromUrlHash) {
 
     bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
     var nbOfCommits = children.length;
 
-    var newDisplay = bVisible ? 'block' : 'none';
-
     var hashInUrl = document.location.hash.replace('#', '');
-    for(var i=0, ii = nbOfCommits; i<ii; i++) {
+    for (var i=0, ii = nbOfCommits; i<ii; i++) {
         var child = children[i];
         if(!child.id || child.id.indexOf('diff-') == -1){
             continue;
         }
 
         var diffContainer = child;
+        var diffContainerHeader = diffContainer.children[0];
         var diffContainerBody = diffContainer.children[1];
         var fileName = diffContainer.querySelector('.meta').getAttribute('data-path');
 
-        if (bKeepItemFromUrlHash && !bVisible && fileName == hashInUrl){
+        if (bKeepItemFromUrlHash && !iVisible && fileName == hashInUrl){
             continue;
         }
-        diffContainerBody.style.display = newDisplay;
+
+        var style = diffContainerBody.style;
+        if (iVisible == 2) { // "display unreviewed" mode
+            var cl = diffContainerHeader.classList;
+            // reading this from DOM since for now, the import from URL feature just highlights items without affecting local storage..
+            if (cl.contains("ghAssistantButtonStateFail") || cl.contains("ghAssistantButtonStateOk")) {
+                style.display = "none";
+            } else {
+                style.display = "block";
+            }
+        } else {
+            style.display = iVisible ? 'block' : 'none';
+        }
     }
 };
 
