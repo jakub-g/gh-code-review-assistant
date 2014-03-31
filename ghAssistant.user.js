@@ -494,7 +494,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         }
 
         var serialized = shortStatus.map(function (item){
-            return item.key + ":" + item.value
+            return item.key + ":" + item.value;
         }).join("&");
 
         var hashChunk = window.encodeURIComponent(";GHADATA=" + serialized);
@@ -581,7 +581,7 @@ gha.util.Storage.createWipeButton = function (cfg) {
     });
 
     return btn;
-}
+};
 
 /*
  * GitHub logs data about slow events into local storage and uploads them shortly after that
@@ -591,7 +591,7 @@ gha.util.Storage.createWipeButton = function (cfg) {
  */
 gha.util.Storage.clearSlowEventsHack = function () {
     window.localStorage.removeItem("slow-events");
-}
+};
 
 // =================================================================================================
 
@@ -666,17 +666,21 @@ gha.util.VisibilityManager.toggleDisplayAll = function(bVisible, bKeepItemFromUr
 gha.util.VisibilityManager.restoreElementsFromHash = function() {
     var hash = document.location.hash.replace('#', '');
     var match; // using match[0] instead of hash in querySelector due to possible ;GHADATA in hash
-    if (match = hash.match("diff-[0-9a-f]{32}")) {
+
+    var diffContainer;
+    var diffContainerBody;
+
+    if ( (match = hash.match("diff-[0-9a-f]{32}")) !== null ) {
         var hashAnchor = document.querySelector("a[name='" + match[0] + "']");
         if (hashAnchor) {
-            var diffContainer = hashAnchor.nextElementSibling;
-            var diffContainerBody = diffContainer.children[1];
+            diffContainer = hashAnchor.nextElementSibling;
+            diffContainerBody = diffContainer.children[1];
             diffContainerBody.style.display = "block";
         }
-    } else if (match = hash.match("diff-[0-9]{1,3}")) {
-        var diffContainer = document.querySelector("div#" + match[0]);
+    } else if ( (match = hash.match("diff-[0-9]{1,3}")) !== null ) {
+        diffContainer = document.querySelector("div#" + match[0]);
         if (diffContainer) {
-            var diffContainerBody = diffContainer.children[1];
+            diffContainerBody = diffContainer.children[1];
             diffContainerBody.style.display = "block";
         }
     }
@@ -931,7 +935,7 @@ gha.classes.GHALocalStorageLoader = function (storage) {
         var state = this._storage.loadState(filePath); // might be 0, 1 or undefined
 
         var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
-        if(state != null) {
+        if (state !== null && state !== undefined) {
             var text = (state === "0") ? L10N.fail : L10N.ok;
             var ghaClassName = btnBaseClass + text;
             var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
