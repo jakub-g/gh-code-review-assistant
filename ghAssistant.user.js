@@ -146,6 +146,7 @@ var L10N = {
     orphanedCommitsInfo: "Note though that storage on *commits* is repo-independent in order " +
         "to work across the forks.\nThere are currently %ORPH orphaned commit-related entries.",
     hashInUrlUpdated: "Code review status was exported to the hash in your URL.\nThe hash length is now ",
+    codeReviewStatusInfoBtn : "Code review status:",
     importStatusFromUrl : "Import from URL",
     exportStatusToUrl : "Export to URL",
     nothingToExport : "Nothing to export - code review status is empty",
@@ -327,7 +328,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
     var nowVisible = 1 - hiddenByDefault; // closure to keep state; boolean to int conversion
     btn.addEventListener('click', function(evt) {
         // change the state between 0:all hidden, 1:all visible, 2:unreviewed visible
-        if (nowVisible == 0) {
+        if (nowVisible === 0) {
             nowVisible = 2;
             btn.innerHTML = L10N.expandAll;
         } else if (nowVisible == 2){
@@ -579,7 +580,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function (div) {
 
 gha.util.DomWriter.attachStatusImportExportButtons = function (div) {
     var buttonInfo = gha.util.DomUtil.createButton({
-        text : "Code review status:",
+        text : L10N.codeReviewStatusInfoBtn,
         style : "float:right",
         disabled : true
     });
