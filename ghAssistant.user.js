@@ -145,6 +145,7 @@ var L10N = {
     orphanedCommitsInfo: "Note though that storage on *commits* is repo-independent in order " +
         "to work across the forks.\nThere are currently %ORPH orphaned commit-related entries.",
     hashInUrlUpdated: "Code review status was exported to the hash in your URL.\nThe hash length is now ",
+    confirmDeserialize : "This may wipe your current review status. Proceed?",
 };
 
 var gha = {
@@ -485,8 +486,15 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
         var magic = gha.util.StatusExporter.MAGIC_STRING;
         var hash = window.decodeURIComponent(window.location.hash);
 
+        // check if GHADATA is present in hash
         var idx = hash.indexOf(magic);
         if (idx == -1) {
+            return;
+        }
+
+        // warn user this might overwrite status
+        var msg = L10N.confirmDeserialize;
+        if( !window.confirm(msg) ) {
             return;
         }
 
@@ -501,9 +509,12 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
             storageHashmap[filePath] = value;
         });
 
-        new gha.classes.GHALocalStorageLoader({loadState : function (filePath) {
-            return storageHashmap[filePath];
-        }}).run();
+        // hack: create an instance of storage loader, using storageHashmap as provider
+        new gha.classes.GHALocalStorageLoader({
+            loadState : function (filePath) {
+                return storageHashmap[filePath];
+            }
+        }).run();
     });
 
     return btn;
