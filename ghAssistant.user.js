@@ -426,6 +426,86 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 
 // =================================================================================================
 
+gha.util.StatusExporter = {};
+
+gha.util.StatusExporter.MAGIC_STRING = ";GHADATA=";
+
+gha.util.StatusExporter.createButtonSerialize = function () {
+    var btn = gha.util.Storage.createButton({
+        text : "Export status to URL",
+        style : "float:right"
+    });
+
+    btn.addEventListener('click', function () {
+        var status = gha.instance.storage.getEntriesForCurrentContext();
+        if (status.length === 0) {
+            alert("Nothing to export for current URL");
+            return;
+        }
+
+        var entries = status.entries;
+        var fullPrefix = gha.instance.storage.getFullPrefixForCurrentContext();
+
+        // strip the boilerplate and save to intermediate object
+        var shortStatus = [];
+        for (var key in entries) {
+            var shortKey = key.replace(fullPrefix, "");
+            shortStatus.push({
+                key : shortKey,
+                value : entries[key]
+            });
+        }
+
+        var serialized = shortStatus.map(function (item){
+            return item.key + ":" + item.value;
+        }).join("&");
+
+        var magic = gha.util.StatusExporter.MAGIC_STRING;
+        var hashChunk = window.encodeURIComponent(magic + serialized);
+        var hashIdx = window.location.hash.indexOf(magic);
+        if (hashIdx >= 0) {
+            // overwrite instead of appending multiple times
+            window.location.hash = window.location.hash.slice(0, hashIdx) + hashChunk;
+        } else {
+            window.location.hash += hashChunk;
+        }
+        alert(L10N.hashInUrlUpdated + hashChunk.length);
+    });
+
+    return btn;
+};
+
+gha.util.StatusExporter.createButtonDeserialize = function () {
+    var btn = gha.util.Storage.createButton({
+        text : "Import status from URL",
+        style : "float:right"
+    });
+
+    btn.addEventListener('click', function () {
+        var magic = gha.util.StatusExporter.MAGIC_STRING;
+        var hash = window.decodeURIComponent(window.location.hash);
+
+        var idx = hash.indexOf(magic);
+        if (idx == -1) {
+            return;
+        }
+
+        var ghaData = hash.slice(idx + magic.length);
+        var aoDeserialized = ghaData.split("&").map(function (sKeyAndValue) {
+            var data = sKeyAndValue.split(":");
+            return {
+                key : data[0],
+                value : data[1]
+            }
+        }); // [ {key: .. value: ..}, {key: .. value: ..} ]
+
+        console.dir(aoDeserialized);
+        debugger
+    });
+
+    return btn;
+};
+
 gha.util.DomWriter.attachStorageWipeButtons = function () {
     var footer = document.querySelector('body > .container');
 
@@ -469,55 +549,18 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         }
     });
 
-    var buttonSerialize = gha.util.Storage.createButton({
-        text : "Export code review status",
-        style : "float:right"
-    });
-    buttonSerialize.addEventListener('click', function () {
-        var status = gha.instance.storage.getEntriesForCurrentContext();
-        if (status.length === 0) {
-            alert("Nothing to export for current URL");
-            return;
-        }
-
-        var entries = status.entries;
-        var fullPrefix = gha.instance.storage.getFullPrefixForCurrentContext();
-
-        // strip the boilerplate and save to intermediate object
-        var shortStatus = [];
-        for (var key in entries) {
-            var shortKey = key.replace(fullPrefix, "");
-            shortStatus.push({
-                key : shortKey,
-                value : entries[key]
-            });
-        }
-
-        var serialized = shortStatus.map(function (item){
-            return item.key + ":" + item.value;
-        }).join("&");
-
-        var hashChunk = window.encodeURIComponent(";GHADATA=" + serialized);
-        var hashIdx = window.location.hash.indexOf(";GHADATA");
-        if (hashIdx >= 0) {
-            // overwrite instead of appending multiple times
-            window.location.hash = window.location.hash.slice(0, hashIdx) + hashChunk;
-        } else {
-            window.location.hash += hashChunk;
-        }
-        alert(L10N.hashInUrlUpdated + hashChunk.length);
-    });
-
     div.appendChild(buttonInfo);
     div.appendChild(buttonCurrentEntity);
     div.appendChild(buttonRepo);
     div.appendChild(buttonAll);
 
+    var buttonSerialize = gha.util.StatusExporter.createButtonSerialize();
+    var buttonDeserialize = gha.util.StatusExporter.createButtonDeserialize();
+
     div.appendChild(buttonSerialize);
+    div.appendChild(buttonDeserialize);
 
     footer.appendChild(div);
-
-
 };
 
 gha.util.DomWriter.enableEditing = function () {
