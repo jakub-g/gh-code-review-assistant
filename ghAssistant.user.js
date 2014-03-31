@@ -7,7 +7,8 @@
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
 // @userscriptsOrg  http://userscripts.org/scripts/show/153049
-// @grant           none
+// @grant           GM_getValue
+// @grant           GM_setValue
 // @include         https://github.com/*/*/commit/*
 // @include         https://github.com/*/*/pull/*
 // @include         https://github.com/*/*/compare/*
@@ -98,6 +99,10 @@
 
 // ============================================ CONFIG =============================================
 
+// This is the default config that will be read during the very first run of the script.
+// It'll be imported during first run to the internal browser's storage via GM_setValue (about:config in Firefox,
+// internal WebSQL db in Chrome). Then it can be changed from the settings dialog on GHA pages.
+
 var CONFIG = {};
 // If there's more than N commits in the diff, automatically collapse them all.
 // Use 0 to disable that feature.
@@ -109,8 +114,8 @@ CONFIG.hideFileWhenDiffGt = 0;
 // Do not do any of above if small number of files changed in that commit
 CONFIG.dontHideUnlessMoreThanFiles = 2;
 
-// Whether to show 'Reviewed' button next to each file
-CONFIG.enableReviewedButton = true;
+// Whether to show 'OK' / 'Fail' buttons next to each file
+CONFIG.enableReviewedButtons = true;
 
 // Hide buttons "open this file in GitHub for Windows" next to each file.
 CONFIG.hideGitHubForWindowsButtons = false;
@@ -153,6 +158,7 @@ var L10N = {
     nothingToImport : "Nothing to import - check your URL hash",
     confirmDeserialize : "This may wipe your current review status. Proceed?\n\n" +
         "Note that for now, importing from URL just highlights items but doesn't store anything in your local storage.",
+    openCfg : "Open GH Assistant config dialog"
 };
 
 var gha = {
@@ -236,6 +242,26 @@ gha.util.DomWriter.attachGlobalCss = function () {
     css.push('.ghAssistantButtonStateNormal .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
     css.push('.ghAssistantButtonStateFail   .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
     css.push('.ghAssistantButtonStateOk     .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+
+    css.push('.ghAssistantDialogCenter {\
+        z-index: 1000;\
+        position: fixed;\
+        margin: auto;\
+        top:0;left:0;bottom:0;right:0;\
+        background-color: #8CCEF8;\
+        border: 2px solid black;\
+        height: 300px;\
+        width: 800px;\
+        padding: 10px;\
+        border-radius:10px;\
+        -moz-columns: 2;\
+        -webkit-columns: 2;\
+        display: block;\
+    }');
+    css.push('.ghAssistantDialogCenter > input {\
+        border:1px solid #666;\
+        border-radius:2px;\
+    }');
 
     css.push('.ghAssistantBottomButton {\
         margin:40px 5px 20px 15px;\
@@ -361,7 +387,7 @@ gha.util.DomWriter.attachPerDiffFileFeatures = function () {
         if(!child.id) {
             continue;
         }
-        if (CONFIG.enableReviewedButton) {
+        if (CONFIG.enableReviewedButtons) {
             gha.util.DomWriter._attachReviewStatusButton(child, L10N.ok);
             gha.util.DomWriter._attachReviewStatusButton(child, L10N.fail);
             gha.util.DomWriter.makeFileNameKeyboardAccessible(child);
@@ -533,6 +559,43 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
 
 // =================================================================================================
 
+gha.util.Cfg = {};
+
+gha.util.Cfg.synchronizeSettingsWithBrowser = function () {
+    // Read things from GM_getValue, use CONFIG above just as defaults in case entries are not there
+    // After the first run, we want a perfect sync between GM_getValue and CONFIG
+
+    // For reading, we can then use CONFIG
+    // For writing, special method that updates both CONFIG and GM_* storage
+    for (var key in CONFIG) {
+        var val = GM_getValue(key);
+        if (val !== undefined) {
+            CONFIG[key] = val;
+        } else {
+            GM_setValue(key, CONFIG[key]);
+        }
+    }
+};
+
+gha.util.Cfg.setValue = function (key, value) {
+    CONFIG[key] = value;
+    GM_setValue(key, value);
+};
+
+gha.util.Cfg.createCfgOpenButton = function (div) {
+    var btn = gha.util.DomUtil.createButton({
+        text : L10N.openCfg,
+        style : "display: block; margin: 0px auto 20px",
+    });
+
+    btn.addEventListener('click', function () {
+        div.style.display = "block";
+    });
+
+    return btn;
+};
+// =================================================================================================
+
 gha.util.DomWriter.attachStorageWipeButtons = function (div) {
     var storage = gha.instance.storage;
 
@@ -591,6 +654,65 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (div) {
     div.appendChild(buttonDeserialize);
     div.appendChild(buttonSerialize);
     div.appendChild(buttonInfo);
+};
+
+gha.util.DomWriter.createGHACfgDialog = function () {
+    var cfgDiv = document.createElement('div');
+    cfgDiv.className = "ghAssistantDialogCenter";
+
+    cfgDiv.innerHTML = "<h1 style='width:100%'>GH Assistant settings</h1>";
+
+    var makeInputOnChangeFn = function(key) {
+        return function() {
+            var newVal = ("checkbox" == this.type) ? this.checked : this.value;
+            gha.util.Cfg.setValue(key, newVal);
+            console.info("Writing config: ", key, newVal);
+        };
+    };
+
+    var cfgItems = [];
+    for (var key in CONFIG) {
+        var val = CONFIG[key];
+        var inputType;
+        var isCheckbox = false;
+        if (typeof val == "boolean") {
+            inputType = "checkbox";
+            isCheckbox = true;
+        } else if (typeof val == "number") {
+            inputType = "number";
+        } else if (val.charAt(0) == "#") {
+            inputType = "color";
+        } else {
+            inputType = "text";
+        }
+
+        var text = document.createElement("div");
+        text.innerHTML = key;
+        text.style.cssText = 'display: block; float:left; height:30px; width:200px; clear:left;';
+
+        var input = document.createElement("input");
+        input.type = inputType;
+        input.style.cssText = 'display: block; float:left; height:30px; width:100px;';
+        if (isCheckbox) {
+            input.checked = val;
+        } else {
+            input.value = val;
+        }
+        input.onchange = makeInputOnChangeFn(key);
+
+        cfgDiv.appendChild(text);
+        cfgDiv.appendChild(input);
+    }
+
+    //CONFIG
+    document.body.appendChild(cfgDiv);
+    return cfgDiv;
+};
+
+gha.util.DomWriter.attachGHACfgButton = function (div) {
+    var cfgDiv = gha.util.DomWriter.createGHACfgDialog();
+    var btn = gha.util.Cfg.createCfgOpenButton(cfgDiv);
+    div.appendChild(btn);
 };
 
 gha.util.DomWriter.enableEditing = function () {
@@ -1049,6 +1171,8 @@ gha.util.DomUtil = {
 // =================================================================================================
 
 var main = function () {
+    gha.util.Cfg.synchronizeSettingsWithBrowser();
+
     // read config
     var mainDiffDiv = document.getElementById('files');
     var nbOfFiles = mainDiffDiv.children.length;
@@ -1087,6 +1211,10 @@ var main = function () {
     gha.util.DomWriter.attachStorageWipeButtons(div);
     gha.util.DomWriter.attachStatusImportExportButtons(div);
     footer.appendChild(div);
+
+    var div2 = document.createElement('div');
+    gha.util.DomWriter.attachGHACfgButton(div);
+    footer.appendChild(div2);
     // gha.util.DomWriter.enableEditing();
 };
 
