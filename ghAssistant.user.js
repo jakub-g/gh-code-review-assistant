@@ -423,67 +423,8 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
     diffContainer.appendChild(dsidebar);
 };
 
-createButton = function (cfg) {
-    var storage = gha.instance.storage;
 
-    var btn = document.createElement('button');
-
-    btn.disabled = !!cfg.disabled;
-    btn.style.cssText = cfg.style || "";
-    btn.innerHTML = cfg.text || "";
-    btn.className = 'minibutton ghAssistantStorageWipe';
-    btn.tabIndex = 0;
-
-    return btn;
-};
-
-createWipeButton = function (cfg) {
-    var storage = gha.instance.storage;
-
-    var btn = createButton(cfg);
-
-    btn.addEventListener('click', function () {
-        var prefix = cfg.storagePrefix;
-        var msg;
-
-        var nItemsToBeDeleted = storage.checkSize(prefix);
-        if (nItemsToBeDeleted === 0) {
-            if (prefix) {
-                msg = L10N.noEntriesFoundPrefix + prefix.replace(storage._prefix, "");
-                if (isCommit) {
-                    var nOrphanedCommits = storage.checkOrphanedCommits();
-                    if (nOrphanedCommits > 0) {
-                        msg += "\n\n" + L10N.orphanedCommitsInfo.replace("%ORPH", nOrphanedCommits);
-                    }
-                }
-            } else {
-                msg = L10N.noEntriesFound;
-            }
-            window.alert(msg);
-            setTimeout(clearSlowEventsHack, 0);
-            return;
-        } else {
-            msg = cfg.wipeMsg().replace("%TODEL", "(" + nItemsToBeDeleted + " entries)");
-            if( window.confirm(msg) ) {
-                storage.wipeStorage(cfg.storagePrefix);
-                window.alert(L10N.alertWipeDone);
-            }
-            setTimeout(clearSlowEventsHack, 0);
-        }
-    });
-
-    return btn;
-}
-
-/*
- * GitHub logs data about slow events into local storage and uploads them shortly after that
- * to their servers for inspection. It's likely this will happen when clicking "Wipe GHA storage"
- * buttons due to blocking nature of prompt and alter. Let's remove that data entries not to
- * upload data connected to GHA
- */
-clearSlowEventsHack = function () {
-    window.localStorage.removeItem("slow-events");
-}
+// =================================================================================================
 
 gha.util.DomWriter.attachStorageWipeButtons = function () {
     var footer = document.querySelector('body > .container');
@@ -492,12 +433,12 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
     var storage = gha.instance.storage;
 
 
-    var buttonInfo = createButton({
+    var buttonInfo = gha.util.Storage.createButton({
         text : L10N.wipeStorageText,
         disabled : true
     });
 
-    var buttonCurrentEntity = createWipeButton({
+    var buttonCurrentEntity = gha.util.Storage.createWipeButton({
         text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
         storagePrefix : storage._objectId,
         wipeMsg : function () {
@@ -505,7 +446,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         }
     });
 
-    var buttonRepo = createWipeButton({
+    var buttonRepo = gha.util.Storage.createWipeButton({
         text : L10N.buttonWipeRepoStorage,
         storagePrefix : storage._repoId,
         wipeMsg : function () {
@@ -520,7 +461,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         }
     });
 
-    var buttonAll = createWipeButton({
+    var buttonAll = gha.util.Storage.createWipeButton({
         text : L10N.buttonWipeAllStorage,
         storagePrefix : null,
         wipeMsg : function () {
@@ -528,7 +469,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         }
     });
 
-    var buttonSerialize = createButton({
+    var buttonSerialize = gha.util.Storage.createButton({
         text : "Export code review status",
         style : "float:right"
     });
@@ -587,6 +528,70 @@ gha.util.DomWriter.enableEditing = function () {
         item.setAttribute('contenteditable', true); // setting it on some parent elements results in not so good behavior in Firefox
     }*/
 };
+
+// =================================================================================================
+
+gha.util.Storage = {};
+
+gha.util.Storage.createButton = function (cfg) {
+    var btn = document.createElement('button');
+
+    btn.disabled = !!cfg.disabled;
+    btn.style.cssText = cfg.style || "";
+    btn.innerHTML = cfg.text || "";
+    btn.className = 'minibutton ghAssistantStorageWipe';
+    btn.tabIndex = 0;
+
+    return btn;
+};
+
+gha.util.Storage.createWipeButton = function (cfg) {
+    var storage = gha.instance.storage;
+
+    var btn = gha.util.Storage.createButton(cfg);
+
+    btn.addEventListener('click', function () {
+        var prefix = cfg.storagePrefix;
+        var msg;
+
+        var nItemsToBeDeleted = storage.checkSize(prefix);
+        if (nItemsToBeDeleted === 0) {
+            if (prefix) {
+                msg = L10N.noEntriesFoundPrefix + prefix.replace(storage._prefix, "");
+                if (isCommit) {
+                    var nOrphanedCommits = storage.checkOrphanedCommits();
+                    if (nOrphanedCommits > 0) {
+                        msg += "\n\n" + L10N.orphanedCommitsInfo.replace("%ORPH", nOrphanedCommits);
+                    }
+                }
+            } else {
+                msg = L10N.noEntriesFound;
+            }
+            window.alert(msg);
+            setTimeout(gha.util.Storage.clearSlowEventsHack, 0);
+            return;
+        } else {
+            msg = cfg.wipeMsg().replace("%TODEL", "(" + nItemsToBeDeleted + " entries)");
+            if( window.confirm(msg) ) {
+                storage.wipeStorage(cfg.storagePrefix);
+                window.alert(L10N.alertWipeDone);
+            }
+            setTimeout(gha.util.Storage.clearSlowEventsHack, 0);
+        }
+    });
+
+    return btn;
+}
+
+/*
+ * GitHub logs data about slow events into local storage and uploads them shortly after that
+ * to their servers for inspection. It's likely this will happen when clicking "Wipe GHA storage"
+ * buttons due to blocking nature of prompt and alter. Let's remove that data entries not to
+ * upload data connected to GHA
+ */
+gha.util.Storage.clearSlowEventsHack = function () {
+    window.localStorage.removeItem("slow-events");
+}
 
 // =================================================================================================
 
