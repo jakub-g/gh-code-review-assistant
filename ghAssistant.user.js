@@ -146,7 +146,12 @@ var L10N = {
     orphanedCommitsInfo: "Note though that storage on *commits* is repo-independent in order " +
         "to work across the forks.\nThere are currently %ORPH orphaned commit-related entries.",
     hashInUrlUpdated: "Code review status was exported to the hash in your URL.\nThe hash length is now ",
-    confirmDeserialize : "This may wipe your current review status. Proceed?",
+    importStatusFromUrl : "Import from URL",
+    exportStatusToUrl : "Export to URL",
+    nothingToExport : "Nothing to export - code review status is empty",
+    nothingToImport : "Nothing to import - check your URL hash",
+    confirmDeserialize : "This may wipe your current review status. Proceed?\n\n" +
+        "Note that for now, importing from URL just highlights items but doesn't store anything in your local storage.",
 };
 
 var gha = {
@@ -437,14 +442,14 @@ gha.util.StatusExporter.MAGIC_STRING = ";GHADATA=";
 
 gha.util.StatusExporter.createButtonSerialize = function () {
     var btn = gha.util.DomUtil.createButton({
-        text : "Export to URL",
+        text : L10N.exportStatusToUrl,
         style : "float:right"
     });
 
     btn.addEventListener('click', function () {
         var status = gha.instance.storage.getEntriesForCurrentContext();
         if (status.length === 0) {
-            alert("Nothing to export for current URL");
+            alert(L10N.nothingToExport);
             return;
         }
 
@@ -482,7 +487,7 @@ gha.util.StatusExporter.createButtonSerialize = function () {
 
 gha.util.StatusExporter.createButtonDeserialize = function () {
     var btn = gha.util.DomUtil.createButton({
-        text : "Import from URL",
+        text : L10N.importStatusFromUrl,
         style : "float:right"
     });
 
@@ -493,6 +498,7 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
         // check if GHADATA is present in hash
         var idx = hash.indexOf(magic);
         if (idx == -1) {
+            alert(L10N.nothingToImport);
             return;
         }
 
