@@ -144,7 +144,7 @@ var L10N = {
     questionWipeEntry: "Really want to wipe GH Assistant storage for current entity: ",
     orphanedCommitsInfo: "Note though that storage on *commits* is repo-independent in order " +
         "to work across the forks.\nThere are currently %ORPH orphaned commit-related entries.",
-    hashInUrlUpdated: "Code review status was exported to the hash in your URL",
+    hashInUrlUpdated: "Code review status was exported to the hash in your URL.\nThe hash length is now ",
 };
 
 var gha = {
@@ -505,7 +505,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function () {
         } else {
             window.location.hash += hashChunk;
         }
-        alert(L10N.hashInUrlUpdated);
+        alert(L10N.hashInUrlUpdated + hashChunk.length);
     });
 
     div.appendChild(buttonInfo);
