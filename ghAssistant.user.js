@@ -90,11 +90,14 @@
 //  the proper file will not be hidden.
 // 0.10.4.20131025
 //  When loading state from local storage, never-reviewed items were sometimes mistakenly marked as reviewed.
-
-
-// TODO
-// 1. On compare pages with really long diffs, it can take a few seconds to load everything.
-//    To profile and see if something can be improved.
+// 1.0.0.20140401
+//  - Customizing settings right in the browser
+//  - Importing/exporting code review status through the hash in the URL
+//  - Third button state: expand unreviewed
+//  - Now using canonical SHA1 in storage
+//  - Commits with same SHA1 across forks are now sharing code review status
+//  - Added button to wipe just status for current URL
+//  - Some other little fixes
 
 // ============================================ CONFIG =============================================
 
@@ -159,6 +162,24 @@ var L10N = {
         "Note that for now, importing from URL just highlights items but doesn't store anything in your local storage.",
     openCfg : "Open GH Assistant config dialog"
 };
+
+L10N.firstRunMsg = "Hello from GH Code Review Assistant!\n\n\
+You've just updated to v1.0 which adds lots of great features but is backward incompatible. \
+It's advised to wipe your code review status before continuing. If you have pending code reviews, \
+you may want to downgrade temporarily.\n\n\
+New features:\n\
+- Customizing settings right in the browser\n\
+- Importing/exporting code review status through the hash in the URL\n\
+- Third button state: expand unreviewed\n\n\
+Fixes:\n\
+- Now using canonical SHA1 in storage\n\
+- Commits with same SHA1 across forks are now sharing code review status\n\
+- Added button to wipe just status for current URL\n\
+- Some other little fixes\n\n\
+To customize the settings, go to some pull request page, and open config dialog in the bottom of the page.\n\n\
+To see the upcoming features:\n\
+https://github.com/jakub-g/gh-code-review-assistant/issues?labels=TODO&page=1&state=open\n\n\
+Enjoy the new version!";
 
 var gha = {
     classes : {},  // classes to be instantiated
@@ -726,11 +747,11 @@ gha.util.DomWriter.createGHACfgDialog = function () {
 
         var text = document.createElement("div");
         text.innerHTML = key;
-        text.className = "ghaCfgText";//style.cssText = 'display: block; float:left; height:30px; width:200px; padding:4px; margin:1px; clear:left;';
+        text.className = "ghaCfgText";
 
         var input = document.createElement("input");
         input.type = inputType;
-        input.className = "ghaCfgInput" //  = 'display: block; float:left; height:30px; width:100px; padding:3px; margin:1px; border:1px solid black';
+        input.className = "ghaCfgInput";
         if (isCheckbox) {
             input.checked = val;
         } else {
@@ -1253,6 +1274,14 @@ var main = function () {
     var div2 = document.createElement('div');
     gha.util.DomWriter.attachGHACfgButton(div);
     footer.appendChild(div2);
+
+    var isFirstRun = (GM_getValue('firstRun.1.0') === undefined);
+    if (isFirstRun) {
+        GM_setValue('firstRun.1.0', true);
+        setTimeout(function() {
+            alert(L10N.firstRunMsg);
+        }, 800);
+    }
     // gha.util.DomWriter.enableEditing();
 };
 
