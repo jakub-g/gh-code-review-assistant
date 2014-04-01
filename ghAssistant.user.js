@@ -102,8 +102,9 @@
 // ============================================ CONFIG =============================================
 
 // This is the default config that will be read during the very first run of the script.
-// It'll be imported during first run to the internal browser's storage via GM_setValue (about:config in Firefox,
-// internal WebSQL db in Chrome). Then it can be changed from the settings dialog on GHA pages.
+// It'll be imported during first run to the internal browser's storage via GM_setValue (SQLite
+// storages of Greasemonkey/Tampermonkey in user's profile folder of the browser).
+// Then it can be changed from the settings dialog on GHA pages.
 
 var CONFIG = {};
 // If there's more than N commits in the diff, automatically collapse them all.
