@@ -188,7 +188,9 @@ var gha = {
 };
 
 // =================================================================================================
-
+var global = this;
+global.GM_getValue = global.GM_getValue || function () {};
+global.GM_setValue = global.GM_setValue || function () {};
 
 var pageId = document.location.pathname.replace(/\//g,'#'); // for easier regexes
 var isCommit  = pageId.match(/^#.*?#.*?#commit/);
@@ -537,7 +539,7 @@ gha.util.StatusExporter.createButtonSerialize = function () {
         }).join("&");
 
         var magic = gha.util.StatusExporter.MAGIC_STRING;
-        var hashChunk = window.encodeURIComponent(magic + serialized);
+        var hashChunk = global.encodeURIComponent(magic + serialized);
         var hashIdx = window.location.hash.indexOf(magic);
         if (hashIdx >= 0) {
             // overwrite instead of appending multiple times
@@ -559,7 +561,7 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
 
     btn.addEventListener('click', function () {
         var magic = gha.util.StatusExporter.MAGIC_STRING;
-        var hash = window.decodeURIComponent(window.location.hash);
+        var hash = global.decodeURIComponent(window.location.hash);
 
         // check if GHADATA is present in hash
         var idx = hash.indexOf(magic);
