@@ -95,7 +95,6 @@
 // TODO
 // 1. On compare pages with really long diffs, it can take a few seconds to load everything.
 //    To profile and see if something can be improved.
-// 4. Storing CONFIG in the browser instead of the script (script should only provide defaults)
 
 // ============================================ CONFIG =============================================
 
@@ -125,8 +124,8 @@ CONFIG.hideGitHubForWindowsButtons = false;
 CONFIG.enableDiffSidebarAndFooter = true;
 CONFIG.sidebarSize = 12; // in pixels
 CONFIG.footerSize = 8;
-CONFIG.sidebarColor1 = '#eee';
-CONFIG.sidebarColor2 = '#aaa';
+CONFIG.sidebarColor1 = '#eeeeee';
+CONFIG.sidebarColor2 = '#aaaaaa';
 
 // =================================================================================================
 
@@ -254,13 +253,25 @@ gha.util.DomWriter.attachGlobalCss = function () {
         width: 800px;\
         padding: 10px;\
         border-radius:10px;\
-        -moz-columns: 2;\
-        -webkit-columns: 2;\
-        display: block;\
+        overflow-y: auto;\
+        display: none;\
     }');
-    css.push('.ghAssistantDialogCenter > input {\
+    css.push('.ghAssistantDialogCenter input {\
         border:1px solid #666;\
         border-radius:2px;\
+    }');
+    css.push('.ghAssistantDialogCloseBtn {\
+        cursor: pointer;\
+        display: block;\
+        float: right;\
+        border: 2px solid white;\
+        width: 30px;\
+        height: 30px;\
+        text-align: center;\
+        font-family: Arial;\
+        font-size: 22px;\
+        background-color: darkred;\
+        color:white;\
     }');
 
     css.push('.ghAssistantBottomButton {\
@@ -673,7 +684,19 @@ gha.util.DomWriter.createGHACfgDialog = function () {
     var cfgDiv = document.createElement('div');
     cfgDiv.className = "ghAssistantDialogCenter";
 
-    cfgDiv.innerHTML = "<h1 style='width:100%'>GH Assistant settings</h1>";
+    var closeBtn = document.createElement('div');
+    closeBtn.className = "ghAssistantDialogCloseBtn";
+    closeBtn.innerHTML = '&#x2716;';
+    closeBtn.addEventListener('click', function () {
+        cfgDiv.style.display = 'none';
+    });
+    cfgDiv.appendChild(closeBtn);
+
+    var h1 = document.createElement('h1');
+    h1.style.cssText = 'width:100%; text-align:center';
+    h1.textContent = 'GH Assistant settings';
+    cfgDiv.appendChild(h1);
+
 
     var makeInputOnChangeFn = function(key) {
         return function() {
@@ -683,6 +706,8 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         };
     };
 
+    var cfgItemsDiv = document.createElement('div');
+    cfgItemsDiv.style.cssText = '-moz-columns: 2; -webkit-columns: 2; columns:2;';
     var cfgItems = [];
     for (var key in CONFIG) {
         var val = CONFIG[key];
@@ -713,11 +738,11 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         }
         input.onchange = makeInputOnChangeFn(key);
 
-        cfgDiv.appendChild(text);
-        cfgDiv.appendChild(input);
+        cfgItemsDiv.appendChild(text);
+        cfgItemsDiv.appendChild(input);
     }
 
-    //CONFIG
+    cfgDiv.appendChild(cfgItemsDiv);
     document.body.appendChild(cfgDiv);
     return cfgDiv;
 };
