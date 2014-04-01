@@ -109,10 +109,10 @@ var CONFIG = {};
 CONFIG.hideAllWhenMoreThanFiles = 4;
 
 // Automatically collapse entries that have changed more than N lines.
-CONFIG.hideFileWhenDiffGt = 0;
+CONFIG.hideFileWhenDiffMoreThanLines = 0;
 
 // Do not do any of above if small number of files changed in that commit
-CONFIG.dontHideUnlessMoreThanFiles = 2;
+CONFIG.dontHideAnythingIfLessThanFiles = 3;
 
 // Whether to show 'OK' / 'Fail' buttons next to each file
 CONFIG.enableReviewedButtons = true;
@@ -265,6 +265,13 @@ gha.util.DomWriter.attachGlobalCss = function () {
 
     css.push('.ghAssistantBottomButton {\
         margin:40px 5px 20px 15px;\
+    }');
+
+    css.push('.ghaCfgText {\
+        display: block; float:left; min-height:30px; height:30px; width:200px; padding:4px; margin:1px; clear:left\
+    }');
+    css.push('input.ghaCfgInput {\
+        display: block; float:left; min-height:30px; height:30px; width:100px; padding:3px; margin:1px; border:1px solid black\
     }');
 
     if (CONFIG.enableDiffSidebarAndFooter) {
@@ -569,6 +576,12 @@ gha.util.Cfg.synchronizeSettingsWithBrowser = function () {
     // For writing, special method that updates both CONFIG and GM_* storage
     for (var key in CONFIG) {
         var val = GM_getValue(key);
+
+        // make sure we have numeric values as numbers - they could be stored to GM storage as strings...
+        if (typeof(val) !== "boolean" && val == Number(val)) {
+            val = Number(val);
+        }
+
         if (val !== undefined) {
             CONFIG[key] = val;
         } else {
@@ -688,11 +701,11 @@ gha.util.DomWriter.createGHACfgDialog = function () {
 
         var text = document.createElement("div");
         text.innerHTML = key;
-        text.style.cssText = 'display: block; float:left; height:30px; width:200px; clear:left;';
+        text.className = "ghaCfgText";//style.cssText = 'display: block; float:left; height:30px; width:200px; padding:4px; margin:1px; clear:left;';
 
         var input = document.createElement("input");
         input.type = inputType;
-        input.style.cssText = 'display: block; float:left; height:30px; width:100px;';
+        input.className = "ghaCfgInput" //  = 'display: block; float:left; height:30px; width:100px; padding:3px; margin:1px; border:1px solid black';
         if (isCheckbox) {
             input.checked = val;
         } else {
@@ -1179,10 +1192,10 @@ var main = function () {
 
     var autoHide = false;
     var autoHideLong = false;
-    if(nbOfFiles > CONFIG.dontHideUnlessMoreThanFiles) {
+    if(nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles) {
         if(CONFIG.hideAllWhenMoreThanFiles > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles){
             autoHide = true;
-        }else if(CONFIG.hideFileWhenDiffGt > 0) {
+        }else if(CONFIG.hideFileWhenDiffMoreThanLines > 0) {
             autoHideLong = true;
         }
     }
@@ -1199,7 +1212,7 @@ var main = function () {
     if(autoHide) {
         gha.util.VisibilityManager.toggleDisplayAll(false, true);
     }else if(autoHideLong) {
-        gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffGt);
+        gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines);
     }
     gha.util.VisibilityManager.restoreElementsFromHash();
     gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
