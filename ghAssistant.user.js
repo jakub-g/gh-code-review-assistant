@@ -189,6 +189,7 @@ var gha = {
 };
 
 // =================================================================================================
+
 var global = this;
 global.GM_getValue = global.GM_getValue || function () {};
 global.GM_setValue = global.GM_setValue || function () {};
@@ -197,6 +198,12 @@ var pageId = document.location.pathname.replace(/\//g,'#'); // for easier regexe
 var isCommit  = pageId.match(/^#.*?#.*?#commit/);
 var isPull    = pageId.match(/^#.*?#.*?#pull/);
 var isCompare = pageId.match(/^#.*?#.*?#compare/);
+
+var makediv = function (cssClassName) {
+    var div = document.createElement('div');
+    div.className  = cssClassName;
+    return div;
+}
 
 gha.util.DomReader = {};
 
@@ -230,6 +237,9 @@ gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghAssistantButtonState';
 
 gha.util.DomWriter.attachGlobalCss = function () {
     var css = [];
+
+    css.push('.floatLeft {float:left;}');
+    css.push('.floatRight {float:right;}');
 
     css.push('a.ghAssistantFileNameSpan {text-decoration: none; margin-left: -10px;  padding: 0 10px;}'); // so that the box's outline looks nicer when focused
 
@@ -491,13 +501,11 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 
     var hLink = '<a tabIndex=0 title="' + L10N.sidebarFooterTooltip + '" href="#' + diffContainer.id + '">&nbsp;</a>';
 
-    var dfoot = document.createElement('div');
-    dfoot.className = 'ghAssistantFileFoot';
+    var dfoot = makediv('ghAssistantFileFoot');
     dfoot.innerHTML = hLink;
     diffContainer.appendChild(dfoot);
 
-    var dsidebar = document.createElement('div');
-    dsidebar.className = 'ghAssistantFileSide';
+    var dsidebar = makediv('ghAssistantFileSide');
     dsidebar.innerHTML = hLink.replace('tabIndex=0', 'tabIndex=-1'); // let only footer be TAB-navigable, no need to have both
     diffContainer.appendChild(dsidebar);
 };
@@ -681,8 +689,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
         }
     });
 
-    var div = document.createElement('div');
-    div.style.cssText = "float:left";
+    var div = makediv('floatLeft');
 
     div.appendChild(buttonInfo);
     div.appendChild(buttonCurrentEntity);
@@ -700,8 +707,7 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
     var buttonSerialize = gha.util.StatusExporter.createButtonSerialize();
     var buttonDeserialize = gha.util.StatusExporter.createButtonDeserialize();
 
-    var div = document.createElement('div');
-    div.style.cssText = "float:right";
+    var div = makediv('floatRight');
 
     div.appendChild(buttonInfo);
     div.appendChild(buttonSerialize);
@@ -711,11 +717,9 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
 };
 
 gha.util.DomWriter.createGHACfgDialog = function () {
-    var cfgDiv = document.createElement('div');
-    cfgDiv.className = "ghAssistantDialogCenter";
+    var cfgDiv = makediv("ghAssistantDialogCenter");
 
-    var closeBtn = document.createElement('div');
-    closeBtn.className = "ghAssistantDialogCloseBtn";
+    var closeBtn = makediv("ghAssistantDialogCloseBtn");
     closeBtn.innerHTML = '&#x2716;';
     closeBtn.addEventListener('click', function () {
         cfgDiv.style.display = 'none';
@@ -754,9 +758,8 @@ gha.util.DomWriter.createGHACfgDialog = function () {
             inputType = "text";
         }
 
-        var text = document.createElement("div");
+        var text = makediv("ghaCfgText");
         text.innerHTML = key;
-        text.className = "ghaCfgText";
 
         var input = document.createElement("input");
         input.type = inputType;
@@ -781,7 +784,7 @@ gha.util.DomWriter.attachGHACfgButton = function (parentDiv) {
     var cfgDiv = gha.util.DomWriter.createGHACfgDialog();
     var btn = gha.util.Cfg.createCfgOpenButton(cfgDiv);
 
-    var div = document.createElement('div');
+    var div = makediv();
     div.style.cssText = "clear:both";
     div.appendChild(btn);
 
