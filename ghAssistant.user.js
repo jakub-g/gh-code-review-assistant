@@ -241,7 +241,7 @@ gha.util.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerH
 
 gha.util.DomWriter = {};
 
-gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghAssistantButtonState';
+gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghaButtonState';
 
 gha.util.DomWriter.attachGlobalCss = function () {
     var css = [];
@@ -249,50 +249,50 @@ gha.util.DomWriter.attachGlobalCss = function () {
     css.push('.floatLeft {float:left;}');
     css.push('.floatRight {float:right;}');
 
-    css.push('a.ghAssistantFileNameSpan {text-decoration: none; margin-left: -10px;  padding: 0 10px;}'); // so that the box's outline looks nicer when focused
+    css.push('a.ghaFileNameSpan {text-decoration: none; margin-left: -10px;  padding: 0 10px;}'); // so that the box's outline looks nicer when focused
 
-    css.push('.ghAssistantButtonStateNormal {\
+    css.push('.ghaButtonStateNormal {\
         background-image:   linear-gradient(to bottom, #fafafa, #eaeaea) !important;\
     }');
-    css.push('.ghAssistantButtonStateOk {\
+    css.push('.ghaButtonStateOk {\
         background-image:   linear-gradient(to bottom, #333, #444) !important;\
         text-shadow: none !important;\
     }');
-    css.push('.ghAssistantButtonStateFail {\
+    css.push('.ghaButtonStateFail {\
         background-image:   linear-gradient(to bottom, #833, #844) !important;\
         text-shadow: none !important;\
     }');
 
-    css.push('.ghAssistantButtonStateNormal a.ghAssistantFileNameSpan { color: #555 !important;}');
-    css.push('.ghAssistantButtonStateOk     a.ghAssistantFileNameSpan { color: #fff !important;}');
-    css.push('.ghAssistantButtonStateFail   a.ghAssistantFileNameSpan { color: #fff !important;}');
+    css.push('.ghaButtonStateNormal a.ghaFileNameSpan { color: #555 !important;}');
+    css.push('.ghaButtonStateOk     a.ghaFileNameSpan { color: #fff !important;}');
+    css.push('.ghaButtonStateFail   a.ghaFileNameSpan { color: #fff !important;}');
 
     // we have border, let's tell Firefox not to add its default dotted outline
     css.push('.minibutton:focus {outline: 0;}');
 
-    css.push('.ghAssistantButtonStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
-    css.push('.ghAssistantButtonStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
-    css.push('.ghAssistantButtonStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
+    css.push('.ghaButtonStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
+    css.push('.ghaButtonStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
+    css.push('.ghaButtonStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
 
     // default GH CSS is suited only for their one button "view file", let's fix it as we add 2 more buttons
-    css.push('.ghAssistantButtonStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghAssistantButtonStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
-    css.push('.ghAssistantButtonStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaButtonStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaButtonStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaButtonStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
 
-    css.push('.ghAssistantFileNameSpan:focus {outline:0; border-radius:5px;}');
-    css.push('.ghAssistantButtonStateNormal .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghAssistantButtonStateFail   .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
-    css.push('.ghAssistantButtonStateOk     .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghaFileNameSpan:focus {outline:0; border-radius:5px;}');
+    css.push('.ghaButtonStateNormal .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaButtonStateFail   .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghaButtonStateOk     .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
 
-    css.push('.ghAssistantBottomButton {\
+    css.push('.ghaBottomButton {\
         margin:40px 5px 20px 15px;\
     }');
 
-    css.push('.ghAssistantDialogParent {\
+    css.push('.ghaDialogParent {\
         display: none;\
     }');
 
-    css.push('.ghAssistantDialogCenter {\
+    css.push('.ghaDialogCenter {\
         z-index: 1000;\
         position: fixed;\
         overflow-y: auto;\
@@ -306,11 +306,11 @@ gha.util.DomWriter.attachGlobalCss = function () {
         padding: 0.5rem;\
         border-radius: 0.5rem;\
     }');
-    css.push('.ghAssistantDialogCenter input {\
+    css.push('.ghaDialogCenter input {\
         border: 0.1rem solid #666;\
         border-radius: 0.1rem;\
     }');
-    css.push('.ghAssistantDialogCloseBtn {\
+    css.push('.ghaDialogCloseBtn {\
         display: block;\
         float: right;\
         text-align: center;\
@@ -323,7 +323,7 @@ gha.util.DomWriter.attachGlobalCss = function () {
         height: 2rem;\
         font: bold 1.4rem Verdana;\
     }');
-    css.push('.ghAssistantDialogCloseBtn:focus {\
+    css.push('.ghaDialogCloseBtn:focus {\
         background-color: red;\
     }');
 
@@ -383,13 +383,13 @@ gha.util.DomWriter.attachGlobalCss = function () {
 
 
     if (CONFIG.enableDiffSidebarAndFooter.val) {
-        css.push('.ghAssistantFileFoot {\
+        css.push('.ghaFileFoot {\
             height: ' + CONFIG.footerSize.val + 'px;\
             border-top: 1px solid rgb(216, 216, 216);\
             background-image: linear-gradient(' + CONFIG.sidebarColor1.val + ', ' + CONFIG.sidebarColor2.val + ');\
             font-size: 6pt;}\
         ');
-        css.push('.ghAssistantFileSide {\
+        css.push('.ghaFileSide {\
             width: '+ CONFIG.sidebarSize.val + 'px;  border-right: 1px solid rgb(216, 216, 216);\
             background-image: linear-gradient(to right, ' + CONFIG.sidebarColor2.val + ', ' + CONFIG.sidebarColor1.val + ');\
             font-size: 6pt;\
@@ -401,16 +401,16 @@ gha.util.DomWriter.attachGlobalCss = function () {
             border-radius:0 0 0 10px;}\
         ');
 
-        css.push('.ghAssistantFileFoot > a:hover, .ghAssistantFileFoot > a:focus {\
+        css.push('.ghaFileFoot > a:hover, .ghaFileFoot > a:focus {\
             background-image: linear-gradient(' + CONFIG.sidebarColor2.val + ', ' + CONFIG.sidebarColor1.val + ');\
             outline: 0;\
         }');
-        css.push('.ghAssistantFileSide> a:hover {\
+        css.push('.ghaFileSide> a:hover {\
             background-image: linear-gradient(to right, ' + CONFIG.sidebarColor1.val + ', ' + CONFIG.sidebarColor2.val + ');\
         }');
 
-        css.push('.ghAssistantFileFoot > a {display: block; height:100%;}');
-        css.push('.ghAssistantFileSide > a {display: block; height:100%;}');
+        css.push('.ghaFileFoot > a {display: block; height:100%;}');
+        css.push('.ghaFileSide > a {display: block; height:100%;}');
 
         // override GH's CSS with the "+" button on the side to add the comments
         css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize.val)+'px !important; }');
@@ -517,7 +517,7 @@ gha.util.DomWriter.makeFileNameKeyboardAccessible = function (child) {
     var fileNameSpan = child.querySelector('.info > .js-selectable-text');
     // turns out getting parent is impossible after changing outerHTML, let's do it now
     var diffContainerBody = fileNameSpan.parentNode.parentNode.parentNode.children[1];
-    fileNameSpan.className += ' ghAssistantFileNameSpan';
+    fileNameSpan.className += ' ghaFileNameSpan';
 
     // Yeah this is bad and fragile, but I don't want to create yet another button.
     // Let's make this span be an anchor, so it magically gets support for executing 'onclick' from keyboard event
@@ -527,7 +527,7 @@ gha.util.DomWriter.makeFileNameKeyboardAccessible = function (child) {
 
     // Firefox bug (or feature): after writing to outerHTML, can't use the handle to 'fileNameSpan' to write 'href';
     // it's discarded, probably the browser still think it's a span
-    child.querySelector('.ghAssistantFileNameSpan').href = 'javascript:void(0);';
+    child.querySelector('.ghaFileNameSpan').href = 'javascript:void(0);';
 
     // Ok, now we're keyboard-reachable, let's add an event listener then which shows/hides the diff
     var handler = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
@@ -564,11 +564,11 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 
     var hLink = '<a tabIndex=0 title="' + L10N.sidebarFooterTooltip + '" href="#' + diffContainer.id + '">&nbsp;</a>';
 
-    var dfoot = makeDiv('ghAssistantFileFoot');
+    var dfoot = makeDiv('ghaFileFoot');
     dfoot.innerHTML = hLink;
     diffContainer.appendChild(dfoot);
 
-    var dsidebar = makeDiv('ghAssistantFileSide');
+    var dsidebar = makeDiv('ghaFileSide');
     dsidebar.innerHTML = hLink.replace('tabIndex=0', 'tabIndex=-1'); // let only footer be TAB-navigable, no need to have both
     diffContainer.appendChild(dsidebar);
 };
@@ -780,11 +780,11 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
 };
 
 gha.util.DomWriter.createGHACfgDialog = function () {
-    var wrapperDiv = makeDiv('ghAssistantDialogParent');
+    var wrapperDiv = makeDiv('ghaDialogParent');
 
-    var cfgDiv = makeDiv("ghAssistantDialogCenter");
+    var cfgDiv = makeDiv("ghaDialogCenter");
 
-    var closeBtn = makeElem("a","ghAssistantDialogCloseBtn");
+    var closeBtn = makeElem("a","ghaDialogCloseBtn");
     closeBtn.href = "javascript:void(0);";
     closeBtn.innerHTML = 'X';
     closeBtn.addEventListener('click', function () {
@@ -794,7 +794,7 @@ gha.util.DomWriter.createGHACfgDialog = function () {
 
     var h1 = document.createElement('h1');
     h1.style.cssText = 'width:100%; text-align:center';
-    h1.textContent = 'GH Assistant settings';
+    h1.textContent = 'GH Code Review Assistant settings';
     cfgDiv.appendChild(h1);
 
     var makeInputOnChangeFn = function(key, saveIndicator) {
@@ -1009,7 +1009,7 @@ gha.util.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromU
         if (iVisible == 2) { // "display unreviewed" mode
             var cl = diffContainerHeader.classList;
             // reading this from DOM since for now, the import from URL feature just highlights items without affecting local storage..
-            if (cl.contains("ghAssistantButtonStateFail") || cl.contains("ghAssistantButtonStateOk")) {
+            if (cl.contains("ghaButtonStateFail") || cl.contains("ghaButtonStateOk")) {
                 style.display = "none";
             } else {
                 style.display = "block";
@@ -1083,7 +1083,7 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
         var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
         var ghaClassName = btnBaseClass + text;
         var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
-        var wasMarked = diffContainerHeader.className.indexOf(ghaClassName) > -1;
+        var wasMarked = diffContainerHeader.classList.contains(ghaClassName);
         var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
 
         if(wasMarked){
@@ -1117,7 +1117,7 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
                 nextFileContainer.children[1].style.display = 'block';
 
                 // move focus to the file name
-                nextFileContainer.querySelector('.ghAssistantFileNameSpan').focus();
+                nextFileContainer.querySelector('.ghaFileNameSpan').focus();
             }
         }
     };
@@ -1328,7 +1328,7 @@ gha.util.DomUtil = {
         btn.disabled = !!cfg.disabled;
         btn.style.cssText = cfg.style || "";
         btn.innerHTML = cfg.text || "";
-        btn.className = 'minibutton ghAssistantBottomButton';
+        btn.className = 'minibutton ghaBottomButton';
         btn.tabIndex = 0;
 
         return btn;
