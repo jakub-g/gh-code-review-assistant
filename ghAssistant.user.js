@@ -200,11 +200,14 @@ var isCommit  = pageId.match(/^#.*?#.*?#commit/);
 var isPull    = pageId.match(/^#.*?#.*?#pull/);
 var isCompare = pageId.match(/^#.*?#.*?#compare/);
 
-var makediv = function (cssClassName) {
-    var div = document.createElement('div');
-    div.className  = cssClassName;
+var makeDiv = function (cssClassName) {
+    return makeElem('div', cssClassName);
+};
+var makeElem = function (elem, cssClassName) {
+    var div = document.createElement(elem);
+    div.className  = cssClassName || "";
     return div;
-}
+};
 
 gha.util.DomReader = {};
 
@@ -277,58 +280,104 @@ gha.util.DomWriter.attachGlobalCss = function () {
     css.push('.ghAssistantButtonStateFail   .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
     css.push('.ghAssistantButtonStateOk     .ghAssistantFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
 
-    css.push('.ghAssistantDialogCenter {\
-        z-index: 1000;\
-        position: fixed;\
-        margin: auto;\
-        top:0;left:0;bottom:0;right:0;\
-        background-color: #8CCEF8;\
-        border: 2px solid black;\
-        height: 300px;\
-        width: 58em;\
-        padding: 10px;\
-        border-radius:10px;\
-        overflow-y: auto;\
-        display: none;\
-    }');
-    css.push('.ghAssistantDialogCenter input {\
-        border:1px solid #666;\
-        border-radius:2px;\
-    }');
-    css.push('.ghAssistantDialogCloseBtn {\
-        cursor: pointer;\
-        display: block;\
-        float: right;\
-        border: 2px solid white;\
-        width: 1.5em;\
-        height: 1.5em;\
-        text-align: center;\
-        font-family: Arial;\
-        font-size: 1.5em;\
-        background-color: darkred;\
-        color:white;\
-    }');
-
     css.push('.ghAssistantBottomButton {\
         margin:40px 5px 20px 15px;\
     }');
 
+    css.push('.ghAssistantDialogParent {\
+        display: none;\
+    }');
+
+    css.push('.ghAssistantDialogCenter {\
+        z-index: 1000;\
+        position: fixed;\
+        overflow-y: auto;\
+        margin: auto;\
+        top:0; left:0; bottom:0; right:0;\
+        background-color: #8CCEF8;\
+        \
+        border: 0.1rem solid black;\
+        height: 20rem;\
+        width: 48rem;\
+        padding: 0.5rem;\
+        border-radius: 0.5rem;\
+    }');
+    css.push('.ghAssistantDialogCenter input {\
+        border: 0.1rem solid #666;\
+        border-radius: 0.1rem;\
+    }');
+    css.push('.ghAssistantDialogCloseBtn {\
+        display: block;\
+        float: right;\
+        text-align: center;\
+        background-color: darkred;\
+        color:white;\
+        cursor: pointer;\
+        \
+        border: 0.15rem solid white;\
+        width: 2rem;\
+        height: 2rem;\
+        font: bold 1.4rem Verdana;\
+    }');
+    css.push('.ghAssistantDialogCloseBtn:focus {\
+        background-color: red;\
+    }');
+
     css.push('.ghaCfgWrapper {\
-        -moz-columns: 2; -webkit-columns: 2; columns: 2;\
+        -moz-columns: 2;-webkit-columns: 2; columns: 2;\
     }');
     css.push('.ghaCfgText {\
-        display: block; float:left; min-height:30px; height:30px; width:17em; padding:4px; margin:1px; clear:left\
-    }');
-    css.push('.ghaCfgSaveIndicator {\
-        display: none; float:left; min-height:30px; height:30px; width: 1.8em; margin:0 5px; border:3px solid black;\
-        border-radius: 7px;  background-color: lime; font-weight: bold; text-align:center; cursor:help;\
+        display: block;\
+        float:left;\
+        clear:left;\
+        \
+        margin: 0.1rem;\
+        padding: 0.2rem;\
+        width: 14rem;\
+        height: 2rem;\
+        min-height: 2rem;\
     }');
     css.push('input.ghaCfgInput {\
-        display: block; float:left; min-height:30px; height:30px; width:7em; padding:3px; margin:1px; border:1px solid black\
+        display: block;\
+        float:left;\
+        \
+        margin: 0.1rem;\
+        border: 0.1rem solid black;\
+        padding: 0.2rem;\
+        width: 5rem;\
+        height: 1.5rem;\
+        min-height: 1.5rem;\
+    }');
+    css.push('input.ghaCfgInput:focus {\
+        background-color: #FF9;\
+        outline: 3px solid navy;\
+        -moz-outline-radius: 3px;\
+        box-shadow: none;\
+    }');
+    css.push('.ghaCfgSaveIndicator {\
+        display: none;\
+        float:left;\
+        text-align:center;\
+        cursor:help;\
+        background-color: lime;\
+        \
+        margin: 0 0.4rem;\
+        border: 0.2rem solid black;\
+        border-radius: 0.5rem;\
+        width: 2.7rem;\
+        height: 1.7rem;\
+        min-height: 1rem;\
+        font: bold 1rem Arial;\
     }');
     css.push('.ghaRefreshInfoDiv {\
-        display: none; text-align: center; clear:both; color: darkred; margin-top:10px;\
+        display: none;\
+        clear:both;\
+        text-align: center;\
+        color: darkred;\
+        \
+        margin-top:0.5rem;\
     }');
+
 
     if (CONFIG.enableDiffSidebarAndFooter) {
         css.push('.ghAssistantFileFoot {\
@@ -512,11 +561,11 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 
     var hLink = '<a tabIndex=0 title="' + L10N.sidebarFooterTooltip + '" href="#' + diffContainer.id + '">&nbsp;</a>';
 
-    var dfoot = makediv('ghAssistantFileFoot');
+    var dfoot = makeDiv('ghAssistantFileFoot');
     dfoot.innerHTML = hLink;
     diffContainer.appendChild(dfoot);
 
-    var dsidebar = makediv('ghAssistantFileSide');
+    var dsidebar = makeDiv('ghAssistantFileSide');
     dsidebar.innerHTML = hLink.replace('tabIndex=0', 'tabIndex=-1'); // let only footer be TAB-navigable, no need to have both
     diffContainer.appendChild(dsidebar);
 };
@@ -700,7 +749,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
         }
     });
 
-    var div = makediv('floatLeft');
+    var div = makeDiv('floatLeft');
 
     div.appendChild(buttonInfo);
     div.appendChild(buttonCurrentEntity);
@@ -718,7 +767,7 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
     var buttonSerialize = gha.util.StatusExporter.createButtonSerialize();
     var buttonDeserialize = gha.util.StatusExporter.createButtonDeserialize();
 
-    var div = makediv('floatRight');
+    var div = makeDiv('floatRight');
 
     div.appendChild(buttonInfo);
     div.appendChild(buttonSerialize);
@@ -728,12 +777,15 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
 };
 
 gha.util.DomWriter.createGHACfgDialog = function () {
-    var cfgDiv = makediv("ghAssistantDialogCenter");
+    var wrapperDiv = makeDiv('ghAssistantDialogParent');
 
-    var closeBtn = makediv("ghAssistantDialogCloseBtn");
-    closeBtn.innerHTML = '&#x2716;';
+    var cfgDiv = makeDiv("ghAssistantDialogCenter");
+
+    var closeBtn = makeElem("a","ghAssistantDialogCloseBtn");
+    closeBtn.href = "javascript:void(0);";
+    closeBtn.innerHTML = 'X';
     closeBtn.addEventListener('click', function () {
-        cfgDiv.style.display = 'none';
+        wrapperDiv.style.display = 'none';
     });
     cfgDiv.appendChild(closeBtn);
 
@@ -752,7 +804,7 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         };
     };
 
-    var cfgItemsDiv = makediv('ghaCfgWrapper');
+    var cfgItemsDiv = makeDiv('ghaCfgWrapper');
     var cfgItems = [];
     for (var key in CONFIG) {
         var val = CONFIG[key];
@@ -769,11 +821,11 @@ gha.util.DomWriter.createGHACfgDialog = function () {
             inputType = "text";
         }
 
-        var text = makediv("ghaCfgText");
+        var text = makeDiv("ghaCfgText");
         text.innerHTML = key;
 
-        var saveIndicator = makediv("ghaCfgSaveIndicator");
-        saveIndicator.innerHTML = "&#x2713;";
+        var saveIndicator = makeDiv("ghaCfgSaveIndicator");
+        saveIndicator.innerHTML = "OK";
         saveIndicator.title = "Saved to permanent browser storage";
 
         var input = document.createElement("input");
@@ -793,20 +845,20 @@ gha.util.DomWriter.createGHACfgDialog = function () {
 
     cfgDiv.appendChild(cfgItemsDiv);
 
-    var refreshInfoDiv = makediv('ghaRefreshInfoDiv');
+    var refreshInfoDiv = makeDiv('ghaRefreshInfoDiv');
     refreshInfoDiv.textContent = L10N.refreshForConfigUpdate;
     cfgDiv.appendChild(refreshInfoDiv);
 
-    document.body.appendChild(cfgDiv);
-
-    return cfgDiv;
+    wrapperDiv.appendChild(cfgDiv);
+    document.body.appendChild(wrapperDiv);
+    return wrapperDiv;
 };
 
 gha.util.DomWriter.attachGHACfgButton = function (parentDiv) {
     var cfgDiv = gha.util.DomWriter.createGHACfgDialog();
     var btn = gha.util.Cfg.createCfgOpenButton(cfgDiv);
 
-    var div = makediv();
+    var div = makeDiv();
     div.style.cssText = "clear:both";
     div.appendChild(btn);
 
