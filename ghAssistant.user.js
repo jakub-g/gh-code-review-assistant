@@ -284,7 +284,7 @@ gha.util.DomWriter.attachGlobalCss = function () {
         background-color: #8CCEF8;\
         border: 2px solid black;\
         height: 300px;\
-        width: 800px;\
+        width: 55em;\
         padding: 10px;\
         border-radius:10px;\
         overflow-y: auto;\
@@ -299,11 +299,11 @@ gha.util.DomWriter.attachGlobalCss = function () {
         display: block;\
         float: right;\
         border: 2px solid white;\
-        width: 30px;\
-        height: 30px;\
+        width: 1.5em;\
+        height: 1.5em;\
         text-align: center;\
         font-family: Arial;\
-        font-size: 22px;\
+        font-size: 1.5em;\
         background-color: darkred;\
         color:white;\
     }');
@@ -312,11 +312,14 @@ gha.util.DomWriter.attachGlobalCss = function () {
         margin:40px 5px 20px 15px;\
     }');
 
+    css.push('.ghaCfgWrapper {\
+        -moz-columns: 2; -webkit-columns: 2; columns: 2;\
+    }');
     css.push('.ghaCfgText {\
-        display: block; float:left; min-height:30px; height:30px; width:200px; padding:4px; margin:1px; clear:left\
+        display: block; float:left; min-height:30px; height:30px; width:17em; padding:4px; margin:1px; clear:left\
     }');
     css.push('input.ghaCfgInput {\
-        display: block; float:left; min-height:30px; height:30px; width:100px; padding:3px; margin:1px; border:1px solid black\
+        display: block; float:left; min-height:30px; height:30px; width:7em; padding:3px; margin:1px; border:1px solid black\
     }');
 
     if (CONFIG.enableDiffSidebarAndFooter) {
@@ -740,8 +743,7 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         };
     };
 
-    var cfgItemsDiv = document.createElement('div');
-    cfgItemsDiv.style.cssText = '-moz-columns: 2; -webkit-columns: 2; columns:2;';
+    var cfgItemsDiv = makediv('ghaCfgWrapper');
     var cfgItems = [];
     for (var key in CONFIG) {
         var val = CONFIG[key];
