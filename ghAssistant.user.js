@@ -109,27 +109,27 @@
 var CONFIG = {};
 // If there's more than N commits in the diff, automatically collapse them all.
 // Use 0 to disable that feature.
-CONFIG.hideAllWhenMoreThanFiles = 4;
+CONFIG.hideAllWhenMoreThanFiles = {val: 4, type: "int"};
 
 // Automatically collapse entries that have changed more than N lines.
-CONFIG.hideFileWhenDiffMoreThanLines = 0;
+CONFIG.hideFileWhenDiffMoreThanLines = {val: 0, type: "int"};
 
 // Do not do any of above if small number of files changed in that commit
-CONFIG.dontHideAnythingIfLessThanFiles = 3;
+CONFIG.dontHideAnythingIfLessThanFiles = {val: 3, type: "int"};
 
 // Whether to show 'OK' / 'Fail' buttons next to each file
-CONFIG.enableReviewedButtons = true;
+CONFIG.enableReviewedButtons = {val: true, type: "bool"};
 
 // Hide buttons "open this file in GitHub for Windows" next to each file.
-CONFIG.hideGitHubForWindowsButtons = false;
+CONFIG.hideGitHubForWindowsButtons = {val: false, type: "bool"};
 
 // Whether to show sidebar and footer that scroll to the top of the file on click.
 // Below related look'n'feel config
-CONFIG.enableDiffSidebarAndFooter = true;
-CONFIG.sidebarSize = 12; // in pixels
-CONFIG.footerSize = 8;
-CONFIG.sidebarColor1 = '#eeeeee';
-CONFIG.sidebarColor2 = '#aaaaaa';
+CONFIG.enableDiffSidebarAndFooter = {val: true, type: "bool"};
+CONFIG.sidebarSize = {val: 12, type: "int"}; // in pixels
+CONFIG.footerSize = {val: 8, type: "int"};
+CONFIG.sidebarColor1 = {val: '#eeeeee', type: "color"};
+CONFIG.sidebarColor2 = {val: '#aaaaaa', type: "color"};
 
 // =================================================================================================
 
@@ -207,6 +207,10 @@ var makeElem = function (elem, cssClassName) {
     var div = document.createElement(elem);
     div.className  = cssClassName || "";
     return div;
+};
+var isPositiveInteger = function (str) {
+    var n = ~~Number(str);
+    return String(n) === str && n >= 0;
 };
 
 gha.util.DomReader = {};
@@ -359,7 +363,6 @@ gha.util.DomWriter.attachGlobalCss = function () {
         float:left;\
         text-align:center;\
         cursor:help;\
-        background-color: lime;\
         \
         margin: 0 0.4rem;\
         border: 0.2rem solid black;\
@@ -379,41 +382,41 @@ gha.util.DomWriter.attachGlobalCss = function () {
     }');
 
 
-    if (CONFIG.enableDiffSidebarAndFooter) {
+    if (CONFIG.enableDiffSidebarAndFooter.val) {
         css.push('.ghAssistantFileFoot {\
-            height: ' + CONFIG.footerSize + 'px;\
+            height: ' + CONFIG.footerSize.val + 'px;\
             border-top: 1px solid rgb(216, 216, 216);\
-            background-image: linear-gradient(' + CONFIG.sidebarColor1 + ', ' + CONFIG.sidebarColor2 + ');\
+            background-image: linear-gradient(' + CONFIG.sidebarColor1.val + ', ' + CONFIG.sidebarColor2.val + ');\
             font-size: 6pt;}\
         ');
         css.push('.ghAssistantFileSide {\
-            width: '+ CONFIG.sidebarSize + 'px;  border-right: 1px solid rgb(216, 216, 216);\
-            background-image: linear-gradient(to right, ' + CONFIG.sidebarColor2 + ', ' + CONFIG.sidebarColor1 + ');\
+            width: '+ CONFIG.sidebarSize.val + 'px;  border-right: 1px solid rgb(216, 216, 216);\
+            background-image: linear-gradient(to right, ' + CONFIG.sidebarColor2.val + ', ' + CONFIG.sidebarColor1.val + ');\
             font-size: 6pt;\
             height: 100%;\
             float: left;\
             position: absolute;\
             top:0;\
-            left:-' + (CONFIG.sidebarSize+2) + 'px;\
+            left:-' + (CONFIG.sidebarSize.val+2) + 'px;\
             border-radius:0 0 0 10px;}\
         ');
 
         css.push('.ghAssistantFileFoot > a:hover, .ghAssistantFileFoot > a:focus {\
-            background-image: linear-gradient(' + CONFIG.sidebarColor2 + ', ' + CONFIG.sidebarColor1 + ');\
+            background-image: linear-gradient(' + CONFIG.sidebarColor2.val + ', ' + CONFIG.sidebarColor1.val + ');\
             outline: 0;\
         }');
         css.push('.ghAssistantFileSide> a:hover {\
-            background-image: linear-gradient(to right, ' + CONFIG.sidebarColor1 + ', ' + CONFIG.sidebarColor2 + ');\
+            background-image: linear-gradient(to right, ' + CONFIG.sidebarColor1.val + ', ' + CONFIG.sidebarColor2.val + ');\
         }');
 
         css.push('.ghAssistantFileFoot > a {display: block; height:100%;}');
         css.push('.ghAssistantFileSide > a {display: block; height:100%;}');
 
         // override GH's CSS with the "+" button on the side to add the comments
-        css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize)+'px !important; }');
+        css.push('#files .add-line-comment  { margin-left:-'+ (25+CONFIG.sidebarSize.val)+'px !important; }');
     }
 
-    if (CONFIG.hideGitHubForWindowsButtons) {
+    if (CONFIG.hideGitHubForWindowsButtons.val) {
         css.push('a[href^="github-windows://"], a[href^="http://windows.github.com"] {display: none;}');
     }
 
@@ -499,12 +502,12 @@ gha.util.DomWriter.attachPerDiffFileFeatures = function () {
         if(!child.id) {
             continue;
         }
-        if (CONFIG.enableReviewedButtons) {
+        if (CONFIG.enableReviewedButtons.val) {
             gha.util.DomWriter._attachReviewStatusButton(child, L10N.ok);
             gha.util.DomWriter._attachReviewStatusButton(child, L10N.fail);
             gha.util.DomWriter.makeFileNameKeyboardAccessible(child);
         }
-        if (CONFIG.enableDiffSidebarAndFooter) {
+        if (CONFIG.enableDiffSidebarAndFooter.val) {
             gha.util.DomWriter._attachSidebarAndFooter(child);
         }
     }
@@ -684,15 +687,15 @@ gha.util.Cfg.synchronizeSettingsWithBrowser = function () {
         }
 
         if (val !== undefined) {
-            CONFIG[key] = val;
+            CONFIG[key].val = val;
         } else {
-            GM_setValue(key, CONFIG[key]);
+            GM_setValue(key, CONFIG[key].val);
         }
     }
 };
 
 gha.util.Cfg.setValue = function (key, value) {
-    CONFIG[key] = value;
+    CONFIG[key].val = value;
     GM_setValue(key, value);
 };
 
@@ -797,17 +800,33 @@ gha.util.DomWriter.createGHACfgDialog = function () {
     var makeInputOnChangeFn = function(key, saveIndicator) {
         return function() {
             var newVal = ("checkbox" == this.type) ? this.checked : this.value;
-            gha.util.Cfg.setValue(key, newVal);
-            console.info("Writing config: ", key, newVal);
+
+            // validate
+            var valid = true;
+            if (CONFIG[key].type == "int" && !isPositiveInteger(newVal)) {
+                valid = false;
+            }
+
+            if (valid) {
+                gha.util.Cfg.setValue(key, newVal);
+                console.info("Writing config: ", key, newVal);
+                document.querySelector('.ghaRefreshInfoDiv').style.display = "block";
+                saveIndicator.style.cssText += "background-color: lime; color: black;";
+                saveIndicator.innerHTML = "OK";
+                saveIndicator.title = "Saved to permanent browser storage";
+            } else {
+                saveIndicator.style.cssText += "background-color: darkred; color: white;";
+                saveIndicator.innerHTML = "KO";
+                saveIndicator.title = "Invalid value";
+            }
             saveIndicator.style.display = "block";
-            document.querySelector('.ghaRefreshInfoDiv').style.display = "block";
         };
     };
 
     var cfgItemsDiv = makeDiv('ghaCfgWrapper');
     var cfgItems = [];
     for (var key in CONFIG) {
-        var val = CONFIG[key];
+        var val = CONFIG[key].val;
         var inputType;
         var isCheckbox = false;
         if (typeof val == "boolean") {
@@ -825,8 +844,6 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         text.innerHTML = key;
 
         var saveIndicator = makeDiv("ghaCfgSaveIndicator");
-        saveIndicator.innerHTML = "OK";
-        saveIndicator.title = "Saved to permanent browser storage";
 
         var input = document.createElement("input");
         input.type = inputType;
@@ -1329,10 +1346,10 @@ var main = function () {
 
     var autoHide = false;
     var autoHideLong = false;
-    if(nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles) {
-        if(CONFIG.hideAllWhenMoreThanFiles > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles){
+    if(nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
+        if(CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
             autoHide = true;
-        }else if(CONFIG.hideFileWhenDiffMoreThanLines > 0) {
+        }else if(CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
             autoHideLong = true;
         }
     }
@@ -1349,7 +1366,7 @@ var main = function () {
     if(autoHide) {
         gha.util.VisibilityManager.toggleDisplayAll(false, true);
     }else if(autoHideLong) {
-        gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines);
+        gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines.val);
     }
     gha.util.VisibilityManager.restoreElementsFromHash();
     gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
