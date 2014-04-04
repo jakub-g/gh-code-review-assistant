@@ -161,7 +161,8 @@ var L10N = {
     nothingToImport : "Nothing to import - check your URL hash",
     confirmDeserialize : "This may wipe your current review status. Proceed?\n\n" +
         "Note that for now, importing from URL just highlights items but doesn't store anything in your local storage.",
-    openCfg : "Open GH Assistant config dialog"
+    openCfg : "Open GH Assistant config dialog",
+    refreshForConfigUpdate : "Refresh the page to see the update of the config",
 };
 
 L10N.firstRunMsg = "Hello from GH Code Review Assistant!\n\n\
@@ -284,7 +285,7 @@ gha.util.DomWriter.attachGlobalCss = function () {
         background-color: #8CCEF8;\
         border: 2px solid black;\
         height: 300px;\
-        width: 55em;\
+        width: 58em;\
         padding: 10px;\
         border-radius:10px;\
         overflow-y: auto;\
@@ -318,8 +319,15 @@ gha.util.DomWriter.attachGlobalCss = function () {
     css.push('.ghaCfgText {\
         display: block; float:left; min-height:30px; height:30px; width:17em; padding:4px; margin:1px; clear:left\
     }');
+    css.push('.ghaCfgSaveIndicator {\
+        display: none; float:left; min-height:30px; height:30px; width: 1.8em; margin:0 5px; border:3px solid black;\
+        border-radius: 7px;  background-color: lime; font-weight: bold; text-align:center; cursor:help;\
+    }');
     css.push('input.ghaCfgInput {\
         display: block; float:left; min-height:30px; height:30px; width:7em; padding:3px; margin:1px; border:1px solid black\
+    }');
+    css.push('.ghaRefreshInfoDiv {\
+        display: none; text-align: center; clear:both; color: darkred; margin-top:10px;\
     }');
 
     if (CONFIG.enableDiffSidebarAndFooter) {
@@ -734,12 +742,13 @@ gha.util.DomWriter.createGHACfgDialog = function () {
     h1.textContent = 'GH Assistant settings';
     cfgDiv.appendChild(h1);
 
-
-    var makeInputOnChangeFn = function(key) {
+    var makeInputOnChangeFn = function(key, saveIndicator) {
         return function() {
             var newVal = ("checkbox" == this.type) ? this.checked : this.value;
             gha.util.Cfg.setValue(key, newVal);
             console.info("Writing config: ", key, newVal);
+            saveIndicator.style.display = "block";
+            document.querySelector('.ghaRefreshInfoDiv').style.display = "block";
         };
     };
 
@@ -763,6 +772,10 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         var text = makediv("ghaCfgText");
         text.innerHTML = key;
 
+        var saveIndicator = makediv("ghaCfgSaveIndicator");
+        saveIndicator.innerHTML = "&#x2713;";
+        saveIndicator.title = "Saved to permanent browser storage";
+
         var input = document.createElement("input");
         input.type = inputType;
         input.className = "ghaCfgInput";
@@ -771,14 +784,21 @@ gha.util.DomWriter.createGHACfgDialog = function () {
         } else {
             input.value = val;
         }
-        input.onchange = makeInputOnChangeFn(key);
+        input.onchange = makeInputOnChangeFn(key, saveIndicator);
 
         cfgItemsDiv.appendChild(text);
         cfgItemsDiv.appendChild(input);
+        cfgItemsDiv.appendChild(saveIndicator);
     }
 
     cfgDiv.appendChild(cfgItemsDiv);
+
+    var refreshInfoDiv = makediv('ghaRefreshInfoDiv');
+    refreshInfoDiv.textContent = L10N.refreshForConfigUpdate;
+    cfgDiv.appendChild(refreshInfoDiv);
+
     document.body.appendChild(cfgDiv);
+
     return cfgDiv;
 };
 
