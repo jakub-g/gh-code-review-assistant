@@ -344,7 +344,7 @@ gha.util.DomWriter.attachGlobalCss = function () {
     }
 
     if (CONFIG.hideGitHubForWindowsButtons) {
-        css.push('a[href^="github-windows://"] {display: none;}');
+        css.push('a[href^="github-windows://"], a[href^="http://windows.github.com"] {display: none;}');
     }
 
     gha.util.DomUtil.addCss(css.join('\n'));
