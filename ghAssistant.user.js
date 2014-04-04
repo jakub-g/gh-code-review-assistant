@@ -511,8 +511,7 @@ gha.util.StatusExporter.MAGIC_STRING = ";GHADATA=";
 
 gha.util.StatusExporter.createButtonSerialize = function () {
     var btn = gha.util.DomUtil.createButton({
-        text : L10N.exportStatusToUrl,
-        style : "float:right"
+        text : L10N.exportStatusToUrl
     });
 
     btn.addEventListener('click', function () {
@@ -556,8 +555,7 @@ gha.util.StatusExporter.createButtonSerialize = function () {
 
 gha.util.StatusExporter.createButtonDeserialize = function () {
     var btn = gha.util.DomUtil.createButton({
-        text : L10N.importStatusFromUrl,
-        style : "float:right"
+        text : L10N.importStatusFromUrl
     });
 
     btn.addEventListener('click', function () {
@@ -644,7 +642,7 @@ gha.util.Cfg.createCfgOpenButton = function (div) {
 };
 // =================================================================================================
 
-gha.util.DomWriter.attachStorageWipeButtons = function (div) {
+gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
     var storage = gha.instance.storage;
 
     var buttonInfo = gha.util.DomUtil.createButton({
@@ -683,25 +681,33 @@ gha.util.DomWriter.attachStorageWipeButtons = function (div) {
         }
     });
 
+    var div = document.createElement('div');
+    div.style.cssText = "float:left";
+
     div.appendChild(buttonInfo);
     div.appendChild(buttonCurrentEntity);
     div.appendChild(buttonRepo);
     div.appendChild(buttonAll);
+
+    parentDiv.appendChild(div);
 };
 
-gha.util.DomWriter.attachStatusImportExportButtons = function (div) {
+gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
     var buttonInfo = gha.util.DomUtil.createButton({
         text : L10N.codeReviewStatusInfoBtn,
-        style : "float:right",
         disabled : true
     });
     var buttonSerialize = gha.util.StatusExporter.createButtonSerialize();
     var buttonDeserialize = gha.util.StatusExporter.createButtonDeserialize();
 
-    // they're floated right
-    div.appendChild(buttonDeserialize);
-    div.appendChild(buttonSerialize);
+    var div = document.createElement('div');
+    div.style.cssText = "float:right";
+
     div.appendChild(buttonInfo);
+    div.appendChild(buttonSerialize);
+    div.appendChild(buttonDeserialize);
+
+    parentDiv.appendChild(div);
 };
 
 gha.util.DomWriter.createGHACfgDialog = function () {
@@ -771,10 +777,15 @@ gha.util.DomWriter.createGHACfgDialog = function () {
     return cfgDiv;
 };
 
-gha.util.DomWriter.attachGHACfgButton = function (div) {
+gha.util.DomWriter.attachGHACfgButton = function (parentDiv) {
     var cfgDiv = gha.util.DomWriter.createGHACfgDialog();
     var btn = gha.util.Cfg.createCfgOpenButton(cfgDiv);
+
+    var div = document.createElement('div');
+    div.style.cssText = "clear:both";
     div.appendChild(btn);
+
+    parentDiv.appendChild(div);
 };
 
 gha.util.DomWriter.enableEditing = function () {
@@ -1269,14 +1280,10 @@ var main = function () {
     gha.util.DomWriter.attachPerDiffFileFeatures();
 
     var footer = document.querySelector('body > .container');
-    var div = document.createElement('div');
-    gha.util.DomWriter.attachStorageWipeButtons(div);
-    gha.util.DomWriter.attachStatusImportExportButtons(div);
-    footer.appendChild(div);
 
-    var div2 = document.createElement('div');
-    gha.util.DomWriter.attachGHACfgButton(div);
-    footer.appendChild(div2);
+    gha.util.DomWriter.attachStorageWipeButtons(footer);
+    gha.util.DomWriter.attachStatusImportExportButtons(footer);
+    gha.util.DomWriter.attachGHACfgButton(footer);
 
     var isFirstRun = (GM_getValue('firstRun.1.0') === undefined);
     if (isFirstRun) {
