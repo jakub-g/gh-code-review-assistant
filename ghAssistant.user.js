@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name            GitHub code review assistant
-// @description     Toggle diff visibility per file in the commit. Mark reviewed files (preserves refreshes). Useful to review commits with lots of files changed.
+// @description     Collapse & expand files one by one on diffs and mark them as reviewed. Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         0.10.4.20131025
+// @version         1.0.0.20140407
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
+// @updateURL       https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.meta.js
 // @userscriptsOrg  http://userscripts.org/scripts/show/153049
 // @grant           GM_getValue
 // @grant           GM_setValue
@@ -90,7 +91,7 @@
 //  the proper file will not be hidden.
 // 0.10.4.20131025
 //  When loading state from local storage, never-reviewed items were sometimes mistakenly marked as reviewed.
-// 1.0.0.20140401
+// 1.0.0.20140407
 //  - Customizing settings right in the browser
 //  - Importing/exporting code review status through the hash in the URL
 //  - Third button state: expand unreviewed
