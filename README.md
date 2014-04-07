@@ -14,8 +14,11 @@ Github Assistant is a UserScript, i.e. a piece of JavaScript code, that runs in 
 1. Expand / collapse files comprising the diff individually (by clicking the header of each file).
 1. Configure the script to collapse the files automatically if there are >*N* files or the diff is >*M* lines.
 1. A footer and sidebar are added next to each file to quickly jump to its top.
+1. Serialize & export the code review status into the URL's hash
 
 Works on `/commit`, `/pull`, `/compare` pages.
+
+You can configure all the options right from the config dialog in the browser.
 
 Preview
 =======

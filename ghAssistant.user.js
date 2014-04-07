@@ -384,6 +384,10 @@ gha.util.DomWriter.attachGlobalCss = function () {
         \
         margin-top:0.5rem;\
     }');
+    css.push('.ghaCfgOpenButton {\
+        display: block;\
+        margin: 0px auto 20px;\
+    }');
 
 
     if (CONFIG.enableDiffSidebarAndFooter.val) {
@@ -706,7 +710,7 @@ gha.util.Cfg.setValue = function (key, value) {
 gha.util.Cfg.createCfgOpenButton = function (div) {
     var btn = gha.util.DomUtil.createButton({
         text : L10N.openCfg,
-        style : "display: block; margin: 0px auto 20px",
+        className : "ghaCfgOpenButton",
     });
 
     btn.addEventListener('click', function () {
@@ -1333,7 +1337,7 @@ gha.util.DomUtil = {
         btn.disabled = !!cfg.disabled;
         btn.style.cssText = cfg.style || "";
         btn.innerHTML = cfg.text || "";
-        btn.className = 'minibutton ghaBottomButton';
+        btn.className = 'minibutton ghaBottomButton ' + (cfg.className || "");
         btn.tabIndex = 0;
 
         return btn;
@@ -1389,6 +1393,7 @@ var main = function () {
         GM_setValue('firstRun.1.0', true);
         setTimeout(function() {
             alert(L10N.firstRunMsg);
+            document.querySelector('.ghaDialogParent').style.display = "block";
         }, 800);
     }
     // gha.util.DomWriter.enableEditing();
