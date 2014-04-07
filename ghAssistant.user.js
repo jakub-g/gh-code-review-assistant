@@ -107,29 +107,32 @@
 // Then it can be changed from the settings dialog on GHA pages.
 
 var CONFIG = {};
-// If there's more than N commits in the diff, automatically collapse them all.
-// Use 0 to disable that feature.
-CONFIG.hideAllWhenMoreThanFiles = {val: 4, type: "int"};
+CONFIG.hideAllWhenMoreThanFiles =
+    {val: 4, type: "int", info: "If there are more than #N files in the diff (commit/pull request), fold them all automatically. 0 disables the feature."};
 
-// Automatically collapse entries that have changed more than N lines.
-CONFIG.hideFileWhenDiffMoreThanLines = {val: 0, type: "int"};
+CONFIG.hideFileWhenDiffMoreThanLines =
+    {val: 0, type: "int", info: "If a file has more than #N lines changed, fold that file automatically. Use 0 to disable the feature."};
 
-// Do not do any of above if small number of files changed in that commit
-CONFIG.dontHideAnythingIfLessThanFiles = {val: 3, type: "int"};
+CONFIG.dontHideAnythingIfLessThanFiles =
+    {val: 3, type: "int", info: "Do not apply @hideFileWhenDiffMoreThanLines if there are less than #N files in the diff"};
 
-// Whether to show 'OK' / 'Fail' buttons next to each file
-CONFIG.enableReviewedButtons = {val: true, type: "bool"};
+CONFIG.enableReviewedButtons =
+    {val: true, type: "bool", info: "Whether to show Ok/Fail buttons next to each file"};
 
-// Hide buttons "open this file in GitHub for Windows" next to each file.
-CONFIG.hideGitHubForWindowsButtons = {val: false, type: "bool"};
+CONFIG.hideGitHubForWindowsButtons =
+    {val: false, type: "bool", info: "Whether to hide 'Open this file in GitHub for Windows' buttons"};
 
-// Whether to show sidebar and footer that scroll to the top of the file on click.
-// Below related look'n'feel config
-CONFIG.enableDiffSidebarAndFooter = {val: true, type: "bool"};
-CONFIG.sidebarSize = {val: 12, type: "int"}; // in pixels
-CONFIG.footerSize = {val: 8, type: "int"};
-CONFIG.sidebarColor1 = {val: '#eeeeee', type: "color"};
-CONFIG.sidebarColor2 = {val: '#aaaaaa', type: "color"};
+CONFIG.enableDiffSidebarAndFooter =
+    {val: true, type: "bool", info: "Whether to show sidebar and footer for each file that scroll to the top of the file on click"};
+
+CONFIG.sidebarSize =
+    {val: 12, type: "int", info: "In pixels. See @enableDiffSidebarAndFooter"};
+CONFIG.footerSize =
+    {val: 8, type: "int", info: "In pixels. See @enableDiffSidebarAndFooter"};
+CONFIG.sidebarColor1 =
+    {val: '#eeeeee', type: "color", info: "This should be #rrggbb color. See @enableDiffSidebarAndFooter"};
+CONFIG.sidebarColor2 =
+    {val: '#aaaaaa', type: "color", info: "This should be #rrggbb color. See @enableDiffSidebarAndFooter"};
 
 // =================================================================================================
 
@@ -334,6 +337,7 @@ gha.util.DomWriter.attachGlobalCss = function () {
         display: block;\
         float:left;\
         clear:left;\
+        cursor: help;\
         \
         margin: 0.1rem;\
         padding: 0.2rem;\
@@ -842,6 +846,7 @@ gha.util.DomWriter.createGHACfgDialog = function () {
 
         var text = makeDiv("ghaCfgText");
         text.innerHTML = key;
+        text.title = CONFIG[key].info;
 
         var saveIndicator = makeDiv("ghaCfgSaveIndicator");
 
