@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Collapse & expand files one by one on diffs and mark them as reviewed. Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         1.0.0.20140407
+// @version         1.0.1.20140410
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -99,6 +99,9 @@
 //  - Commits with same SHA1 across forks are now sharing code review status
 //  - Added button to wipe just status for current URL
 //  - Some other little fixes
+// 1.0.1.20140410
+//  Fixed a bug where GHA would not start and throw an exception on repos with dots, underscores
+//  or uppercase chars in reponame or username
 
 // ============================================ CONFIG =============================================
 
