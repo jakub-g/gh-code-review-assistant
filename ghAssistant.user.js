@@ -1193,7 +1193,7 @@ gha.classes.GHALocalStorage = function () {
     this._repoId = null;
 
     this.init = function () {
-        var matches = pageId.match(/^#([a-z0-9\-]+#[a-z0-9\-]+)#(?:commit|pull|compare)#([a-z0-9\-]+)/);
+        var matches = pageId.match(/^#([A-Za-z0-9_\-\.]+#[A-Za-z0-9_\-\.]+)#(?:commit|pull|compare)#([A-Za-z0-9_\-\.]+)/);
         if (matches) {
             // we want repoId to be a leading substring of objectId
             this._objectId = matches[0];     // sth like "#ariatemplates#ariatemplates#pull#1060"
@@ -1208,7 +1208,7 @@ gha.classes.GHALocalStorage = function () {
             }
             //debugger;
         } else {
-            console.error("Unable to create a local storage key for " + loc);
+            console.error("Unable to create a local storage key for " + pageId);
             this.saveState = this.loadState = this.clearState = function () {};
         }
     };
