@@ -1,0 +1,17 @@
+{
+  "name": "gh-code-review-assistant",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "node ./test/run-phantom.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jakub-g/gh-code-review-assistant.git"
+  },
+  "author": "jakub-g",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/jakub-g/gh-code-review-assistant/issues"
+  },
+  "homepage": "https://github.com/jakub-g/gh-code-review-assistant"
+}
