@@ -1,6 +1,17 @@
 var webpage = require('webpage');
 
 var userScriptPath = "../ghAssistant.user.js";
+var debug = true;
+
+function defineXUnit () {
+    window.assert = {
+        eq : function (a1, a2) {
+            if (a1 !== a2) {
+                throw new Error("ASSERT_FAIL: expected " + a1 + " to equal " + a2);
+            }
+        }
+    }
+}
 
 function openAndTest(url, testCb) {
     var page = webpage.create();
@@ -9,18 +20,23 @@ function openAndTest(url, testCb) {
     };
 
     page.onError = function(msg, trace) {
-        /*var msgStack = ['PHANTOM ERROR: ' + msg];
-        if (trace && trace.length) {
-            trace.forEach(function(t) {
-              msgStack.push(' -> ' + (t.file || t.sourceURL) + ': ' + t.line + (t.function ? ' (in function ' + t.function +')' : ''));
-            });
-            msgStack.push("");
-        }
-        console.error(msgStack.join('\n'));*/
-
         var magicString = "ASSERT_FAIL";
-        if (msg.indexOf(magicString) >= 0) {
-            console.error(msg);
+        var isAssertFail = msg.indexOf(magicString) >= 0;
+
+        if (debug && !isAssertFail) {
+            var msgStack = ['PHANTOM ERROR: ' + msg];
+            if (trace && trace.length) {
+                trace.forEach(function(t) {
+                  msgStack.push(' -> ' + (t.file || t.sourceURL) + ': ' + t.line + (t.function ? ' (in function ' + t.function +')' : ''));
+                });
+                msgStack.push("");
+            }
+            console.error(msgStack.join('\n'));
+        }
+
+        if (isAssertFail) {
+            var strip = 7; // leading "Error: ";
+            console.error(msg.slice(strip));
             console.log("Test suite failed, exiting with error code 1");
             phantom.exit(1);
         }
@@ -33,7 +49,10 @@ function openAndTest(url, testCb) {
         console.log("Injecting the userscript... ");
         var injected = page.injectJs(userScriptPath);
         console.log(injected ? "OK" : "FAILED");
-        
+
+        console.log("Injecting the unit test utils... ");
+        page.evaluate(defineXUnit);
+
         console.log("Starting the tests... ");
         page.evaluate(testCb);
         console.log("Tests finished.");
@@ -42,15 +61,13 @@ function openAndTest(url, testCb) {
 
 // ==================================================================================================
 
-assert = 111;
 
 var url = "https://github.com/ariatemplates/ariatemplates/pull/1117/files";
 openAndTest(url, function () {
-console.log(assert);
     var elm = document.querySelector('.js-issue-title').innerText;
     console.log(elm);
     var len = document.querySelectorAll('.ghaCfgOpenButton').length;
     console.log(len);
-    throw new Error("ASSERT_FAIL");
+    assert.eq(1, 2);
     phantom.exit();
 });
