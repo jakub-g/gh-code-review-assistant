@@ -2,9 +2,6 @@ var webpage = require('webpage');
 
 var userScriptPath = "../ghAssistant.user.js";
 
-function AssertionError () {}
-AssertionError.prototype = Object.create(Error.prototype);
-
 function openAndTest(url, testCb) {
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
@@ -45,8 +42,11 @@ function openAndTest(url, testCb) {
 
 // ==================================================================================================
 
+assert = 111;
+
 var url = "https://github.com/ariatemplates/ariatemplates/pull/1117/files";
 openAndTest(url, function () {
+console.log(assert);
     var elm = document.querySelector('.js-issue-title').innerText;
     console.log(elm);
     var len = document.querySelectorAll('.ghaCfgOpenButton').length;
