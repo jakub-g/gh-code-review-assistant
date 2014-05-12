@@ -1,3 +1,4 @@
+// this file is executed in the scope of PhantomJS
 var webpage = require('webpage');
 
 var userScriptPath = "../ghAssistant.user.js";
@@ -5,10 +6,20 @@ var debug = true;
 
 function defineXUnit () {
     window.assert = {
-        eq : function (a1, a2) {
+        _goodAsserts: 0,
+        eq : function (a1, a2, optMsg) {
+            optMsg = optMsg || "";
             if (a1 !== a2) {
-                throw new Error("ASSERT_FAIL: expected " + a1 + " to equal " + a2);
+                throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected " + a1 + " to equal " + a2);
             }
+            this._goodAsserts++;
+        },
+        length : function (item, len, optMsg) {
+            optMsg = optMsg || "";
+            if (item.length != len) {
+                throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
+            }
+            this._goodAsserts++;
         }
     }
 }
