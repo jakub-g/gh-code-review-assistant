@@ -108,15 +108,17 @@ function openAndTest(url, gatherAndRunTests) {
         console.log("INITIALIZING THE TEST\n");
         console.log("* URL: " + url + " loaded with status " + status);
 
-        var usPath = _this.userScriptPath;
-        if (!usPath) {
+        var usPaths = _this.userScriptPaths;
+        if (!usPaths) {
             throw new Error("phantom-control: userScriptPath is not defined");
         }
-        console.log("* Injecting the userscript... (" + usPath + ")");
-        var injected = page.injectJs(usPath);
-        console.log(injected ? "OK" : "FAILED");
-        if (!injected) {
-            throw new Error("Can't inject userscript in the page...");
+        for (var i = 0; i < usPaths.length; i++) {
+            console.log("* Injecting the userscript... (" + usPaths[i] + ")");
+            var injected = page.injectJs(usPaths[i]);
+            console.log(injected ? "OK" : "FAILED");
+            if (!injected) {
+                throw new Error("Can't inject userscript in the page...");
+            }
         }
 
         console.log("* Injecting the unit test utils... ");
@@ -147,7 +149,7 @@ function onTestSuiteFinished (page) {
 
 module.exports = {
     /**
-     * Opens `url` in Phantom, injects `this.userScriptPath` userscript, and calls test function `gatherTest`
+     * Opens `url` in Phantom, injects `this.userScriptPaths` userscripts, and calls test function `gatherTest`
      * with one argument `test`. Usage:
      * <pre>
      *   phantomUtil.openAndTest("http://example.com/", function (test) {
@@ -172,7 +174,9 @@ module.exports = {
      * @param {String} userScriptPath
      */
     userScript : function (userScriptPath) {
-        this.userScriptPath = userScriptPath;
+        this.userScriptPaths.push(userScriptPath)
         return this;
-    }
+    },
+    
+    userScriptPaths : []
 };

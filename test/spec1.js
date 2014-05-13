@@ -1,5 +1,7 @@
 // this file is executed in the scope of PhantomJS
-var phantomUtil = require('./lib/phantom-control.js').userScript("../ghAssistant.user.js");
+var phantomUtil = require('./lib/phantom-control.js')
+    .userScript("./polyfills/Function.bind.js")
+    .userScript("../ghAssistant.user.js");
 
 phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", function (test) {
     test('should have the button to open config', function () {
