@@ -1,10 +1,10 @@
-var konsole = console;
+// this file is executed by NodeJS runtime
 var spawn = require('child_process').spawn;
 
 var cfg = {
     pipeStdOut : true
 };
-var args = ["./test/phantom-control.js"];
+var args = ["./test/spec1.js"];
 var phantomProcess = spawn("phantomjs", args, {
     stdio: "pipe"
 });

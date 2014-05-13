@@ -22,7 +22,8 @@ function defineXUnit () {
     }
 }
 
-function openAndTest(url, testCb) {
+function openAndTest(url, testFn) {
+    var _this = this;
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
         console.log('>>> ', msg);
@@ -55,20 +56,51 @@ function openAndTest(url, testCb) {
         console.log("------------------------------------------------");
         console.log("URL: " + url + " loaded with status " + status);
 
-        console.log("Injecting the userscript... ");
-        var injected = page.injectJs(this.userScriptPath);
+        var usPath = _this.userScriptPath;
+        if (!usPath) {
+            throw new Error("phantom-control: userScriptPath is not defined");
+        }
+        console.log("Injecting the userscript... (" + usPath + ")");
+        var injected = page.injectJs(usPath);
         console.log(injected ? "OK" : "FAILED");
+        if (!injected) {
+            throw new Error("Can't inject userscript in the page...");
+        }
 
         console.log("Injecting the unit test utils... ");
         page.evaluate(defineXUnit);
 
         console.log("Starting the tests... ");
-        page.evaluate(testCb);
+        page.evaluate(testFn);
         console.log("Tests finished.");
+
+        onTestSuiteFinished(page);
     });
 }
 
+function onTestSuiteFinished (page) {
+    var goodAsserts = page.evaluate(function () {
+        return window.assert._goodAsserts;
+    });
+    console.log("\n--------------------");
+    console.log("Test suite summary: " + goodAsserts + " asserts OK");
+    phantom.exit();
+};
+
 module.exports = {
+    /**
+     * Opens `url` in Phantom, injects `this.userScriptPath` userscript, and calls test function `testFn`
+     * @param {String} url
+     * @param {Function} testFn
+     */
     openAndTest : openAndTest,
-    userScriptPath : null
+
+    /**
+     * Sets internal cfg variable userScriptPath as provided, and returns this for chaining.
+     * @param {String} userScriptPath
+     */
+    userScript : function (userScriptPath) {
+        this.userScriptPath = userScriptPath;
+        return this;
+    }
 };

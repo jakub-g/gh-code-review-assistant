@@ -2,7 +2,7 @@
   "name": "gh-code-review-assistant",
   "version": "0.0.0",
   "scripts": {
-    "test": "node ./test/run-phantom.js"
+    "test": "node ./test/lib/run-phantom.js"
   },
   "repository": {
     "type": "git",
