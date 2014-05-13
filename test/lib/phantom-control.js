@@ -5,9 +5,11 @@ var debug = true;
 function defineXUnit () {
     window.assert = {
         _goodAsserts: 0,
+        _badAsserts: 0,
         eq : function (a1, a2, optMsg) {
             optMsg = optMsg || "";
             if (a1 !== a2) {
+                this._badAsserts++;
                 throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected " + a1 + " to equal " + a2);
             }
             this._goodAsserts++;
@@ -15,6 +17,7 @@ function defineXUnit () {
         length : function (item, len, optMsg) {
             optMsg = optMsg || "";
             if (item.length != len) {
+                this._badAsserts++;
                 throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
             }
             this._goodAsserts++;
@@ -22,8 +25,40 @@ function defineXUnit () {
     }
 }
 
-function openAndTest(url, testFn) {
+function openAndTest(url, gatherTests) {
     var _this = this;
+    
+    var pendingTests = [];
+    var wrapWithTryCatch = function () {
+        // it's done this strange way due to how page.evaluate works
+        // it wouldn't see the closure variables, hence the fn to be wrapped
+        // is passed as a second param to page.evaluate
+        return function (origFn) {
+            try {
+                origFn();
+                return true;
+            } catch (e) {
+                console.log(e);
+                return false;
+            }
+        }
+    }
+    var it = function (message, testFn) {
+        pendingTests.push({
+            message : message,
+            testFn : testFn
+        });
+    }
+    it.start = function () {
+        while (pendingTests.length > 0) {
+            var test = pendingTests.shift();
+            var testFn = wrapWithTryCatch();
+            var ok = page.evaluate(testFn, test.testFn);
+            
+            console.log( (ok ? "[ OK ] " : "[FAIL] ") + test.message);
+        }
+    }
+    
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
         console.log('>>> ', msg);
@@ -47,8 +82,8 @@ function openAndTest(url, testFn) {
         if (isAssertFail) {
             var strip = 7; // leading "Error: ";
             console.error(msg.slice(strip));
-            console.log("Test suite failed, exiting with error code 1");
-            phantom.exit(1);
+            //console.log("Test suite failed, exiting with error code 1");
+            //phantom.exit(1);
         }
     };
 
@@ -71,7 +106,7 @@ function openAndTest(url, testFn) {
         page.evaluate(defineXUnit);
 
         console.log("Starting the tests... ");
-        page.evaluate(testFn);
+        gatherTests(it);;
         console.log("Tests finished.");
 
         onTestSuiteFinished(page);
@@ -79,12 +114,18 @@ function openAndTest(url, testFn) {
 }
 
 function onTestSuiteFinished (page) {
-    var goodAsserts = page.evaluate(function () {
-        return window.assert._goodAsserts;
+    var asserts = page.evaluate(function () {
+        return window.assert;
     });
-    console.log("\n--------------------");
-    console.log("Test suite summary: " + goodAsserts + " asserts OK");
-    phantom.exit();
+    var br = "--------------------------------------------------------------------------------";
+    console.log("\n" + br);
+    console.log("| Test suite summary: ");
+    console.log("| " + asserts._goodAsserts + " asserts OK");
+    console.log("| " + asserts._badAsserts + " asserts KO");
+    console.log(br);
+    
+    var hasFailures = asserts._badAsserts > 0;
+    phantom.exit(hasFailures ? 1 : 0);
 };
 
 module.exports = {
