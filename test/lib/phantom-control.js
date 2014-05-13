@@ -4,41 +4,38 @@ var debug = true;
 
 var br = "--------------------------------------------------------------------------------";
 
-function defineXUnit () {
-    window.assert = {
-        _goodAsserts: 0,
-        _badAsserts: 0,
-        eq : function (a1, a2, optMsg) {
-            optMsg = optMsg || "";
-            if (a1 !== a2) {
-                this._badAsserts++;
-                throw new Error("ASSERT_FAIL: " + optMsg + "\n expected " + a1 + " to equal " + a2);
-            }
-            this._goodAsserts++;
-        },
-        inDom : function (selector) {
-            var expected = 1;
-            var actual = document.querySelectorAll(selector).length;
+var scopedInBrowser = {
+    defineXUnit : function () {
+        window.assert = {
+            _goodAsserts: 0,
+            _badAsserts: 0,
+            eq : function (a1, a2, optMsg) {
+                optMsg = optMsg || "";
+                if (a1 !== a2) {
+                    this._badAsserts++;
+                    throw new Error("ASSERT_FAIL: " + optMsg + "\n expected " + a1 + " to equal " + a2);
+                }
+                this._goodAsserts++;
+            },
+            inDom : function (selector) {
+                var expected = 1;
+                var actual = document.querySelectorAll(selector).length;
 
-            var msg = "Expected to find a node matching " + selector;
-            this.eq(expected, actual, msg);
-        },
-        length : function (item, len, optMsg) {
-            optMsg = optMsg || "";
-            if (item.length != len) {
-                this._badAsserts++;
-                throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
+                var msg = "Expected to find a node matching " + selector;
+                this.eq(expected, actual, msg);
+            },
+            length : function (item, len, optMsg) {
+                optMsg = optMsg || "";
+                if (item.length != len) {
+                    this._badAsserts++;
+                    throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
+                }
+                this._goodAsserts++;
             }
-            this._goodAsserts++;
         }
-    }
-}
+    },
 
-function openAndTest(url, gatherTests) {
-    var _this = this;
-
-    var pendingTests = [];
-    var wrapWithTryCatch = function () {
+    wrapWithTryCatch : function () {
         // it's done this strange way due to how page.evaluate works
         // it wouldn't see the closure variables, hence the fn to be wrapped
         // is passed as a second param to page.evaluate
@@ -52,22 +49,30 @@ function openAndTest(url, gatherTests) {
             }
         }
     }
-    var it = function (message, testFn) {
+}
+
+function getTestRunner (page) {
+    var pendingTests = [];
+    var testRunner = function (message, testFn) {
         pendingTests.push({
             message : message,
             testFn : testFn
         });
-    }
-    it.start = function () {
+    };
+
+    testRunner.start = function () {
         while (pendingTests.length > 0) {
             var test = pendingTests.shift();
-            var testFn = wrapWithTryCatch();
+            var testFn = scopedInBrowser.wrapWithTryCatch();
             var ok = page.evaluate(testFn, test.testFn);
 
             console.log( (ok ? " [ OK ] " : " [FAIL] ") + test.message);
         }
     }
+    return testRunner;
+}
 
+function openAndTest(url, gatherAndRunTests) {
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
         var padding = '  >>> ' ;
@@ -97,6 +102,7 @@ function openAndTest(url, gatherTests) {
         }
     };
 
+    var _this = this;
     page.open(url, function (status) {
         console.log(br);
         console.log("INITIALIZING THE TEST\n");
@@ -114,10 +120,10 @@ function openAndTest(url, gatherTests) {
         }
 
         console.log("* Injecting the unit test utils... ");
-        page.evaluate(defineXUnit);
+        page.evaluate(scopedInBrowser.defineXUnit);
 
         console.log("* Starting the tests... \n");
-        gatherTests(it);;
+        gatherAndRunTests(getTestRunner(page));
         console.log("\n* Tests finished.");
 
         onTestSuiteFinished(page);
@@ -141,14 +147,28 @@ function onTestSuiteFinished (page) {
 
 module.exports = {
     /**
-     * Opens `url` in Phantom, injects `this.userScriptPath` userscript, and calls test function `testFn`
+     * Opens `url` in Phantom, injects `this.userScriptPath` userscript, and calls test function `gatherTest`
+     * with one argument `test`. Usage:
+     * <pre>
+     *   phantomUtil.openAndTest("http://example.com/", function (test) {
+     *      test('should do something', function () {
+     *          assert.eq(1, 1);
+     *      });
+     *
+     *      test('should do something else', function () {
+     *          assert.eq(1, 2);
+     *      });
+     *
+     *      test.start();
+     *   });
+     * </pre>
      * @param {String} url
-     * @param {Function} testFn
+     * @param {Function} gatherTest
      */
     openAndTest : openAndTest,
 
     /**
-     * Sets internal cfg variable userScriptPath as provided, and returns this for chaining.
+     * Sets internal cfg variable `this.userScriptPath` as provided, and returns `this` for chaining.
      * @param {String} userScriptPath
      */
     userScript : function (userScriptPath) {
