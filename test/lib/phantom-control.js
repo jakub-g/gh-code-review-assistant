@@ -12,9 +12,16 @@ function defineXUnit () {
             optMsg = optMsg || "";
             if (a1 !== a2) {
                 this._badAsserts++;
-                throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected " + a1 + " to equal " + a2);
+                throw new Error("ASSERT_FAIL: " + optMsg + "\n expected " + a1 + " to equal " + a2);
             }
             this._goodAsserts++;
+        },
+        inDom : function (selector) {
+            var expected = 1;
+            var actual = document.querySelectorAll(selector).length;
+
+            var msg = "Expected to find a node matching " + selector;
+            this.eq(expected, actual, msg);
         },
         length : function (item, len, optMsg) {
             optMsg = optMsg || "";
