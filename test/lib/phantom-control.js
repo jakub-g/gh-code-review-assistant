@@ -2,6 +2,8 @@
 var webpage = require('webpage');
 var debug = true;
 
+var br = "--------------------------------------------------------------------------------";
+
 function defineXUnit () {
     window.assert = {
         _goodAsserts: 0,
@@ -27,7 +29,7 @@ function defineXUnit () {
 
 function openAndTest(url, gatherTests) {
     var _this = this;
-    
+
     var pendingTests = [];
     var wrapWithTryCatch = function () {
         // it's done this strange way due to how page.evaluate works
@@ -54,14 +56,15 @@ function openAndTest(url, gatherTests) {
             var test = pendingTests.shift();
             var testFn = wrapWithTryCatch();
             var ok = page.evaluate(testFn, test.testFn);
-            
-            console.log( (ok ? "[ OK ] " : "[FAIL] ") + test.message);
+
+            console.log( (ok ? " [ OK ] " : " [FAIL] ") + test.message);
         }
     }
-    
+
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
-        console.log('>>> ', msg);
+        var padding = '  >>> ' ;
+        console.log(padding + (""+msg).replace(/\n/g, "\n" + padding));
     };
 
     page.onError = function(msg, trace) {
@@ -88,26 +91,27 @@ function openAndTest(url, gatherTests) {
     };
 
     page.open(url, function (status) {
-        console.log("------------------------------------------------");
-        console.log("URL: " + url + " loaded with status " + status);
+        console.log(br);
+        console.log("INITIALIZING THE TEST\n");
+        console.log("* URL: " + url + " loaded with status " + status);
 
         var usPath = _this.userScriptPath;
         if (!usPath) {
             throw new Error("phantom-control: userScriptPath is not defined");
         }
-        console.log("Injecting the userscript... (" + usPath + ")");
+        console.log("* Injecting the userscript... (" + usPath + ")");
         var injected = page.injectJs(usPath);
         console.log(injected ? "OK" : "FAILED");
         if (!injected) {
             throw new Error("Can't inject userscript in the page...");
         }
 
-        console.log("Injecting the unit test utils... ");
+        console.log("* Injecting the unit test utils... ");
         page.evaluate(defineXUnit);
 
-        console.log("Starting the tests... ");
+        console.log("* Starting the tests... \n");
         gatherTests(it);;
-        console.log("Tests finished.");
+        console.log("\n* Tests finished.");
 
         onTestSuiteFinished(page);
     });
@@ -117,14 +121,14 @@ function onTestSuiteFinished (page) {
     var asserts = page.evaluate(function () {
         return window.assert;
     });
-    var br = "--------------------------------------------------------------------------------";
+    var hasFailures = asserts._badAsserts > 0;
+
     console.log("\n" + br);
     console.log("| Test suite summary: ");
     console.log("| " + asserts._goodAsserts + " asserts OK");
     console.log("| " + asserts._badAsserts + " asserts KO");
     console.log(br);
-    
-    var hasFailures = asserts._badAsserts > 0;
+
     phantom.exit(hasFailures ? 1 : 0);
 };
 
