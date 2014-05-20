@@ -2,7 +2,7 @@
   "name": "gh-code-review-assistant",
   "version": "0.0.0",
   "scripts": {
-    "test": "grunt test && node ./test/lib/run-phantom.js",
+    "test": "grunt test",
     "tdd": "grunt tdd"
   },
   "repository": {
@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/jakub-g/gh-code-review-assistant",
   "devDependencies": {
+    "colors": "^0.6.2",
     "grunt": "^0.4.5",
     "grunt-contrib-jshint": "^0.10.0",
     "grunt-contrib-watch": "^0.6.1"

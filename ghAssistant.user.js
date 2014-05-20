@@ -734,6 +734,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
     });
 
     var buttonCurrentEntity = gha.util.Storage.createWipeButton({
+        id : "ghaWipeCommitOrUrl",
         text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
         storagePrefix : storage._objectId,
         wipeMsg : function () {
@@ -742,6 +743,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
     });
 
     var buttonRepo = gha.util.Storage.createWipeButton({
+        id : "ghaWipeRepo",
         text : L10N.buttonWipeRepoStorage,
         storagePrefix : storage._repoId,
         wipeMsg : function () {
@@ -757,6 +759,7 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
     });
 
     var buttonAll = gha.util.Storage.createWipeButton({
+        id : "ghaWipeAll",
         text : L10N.buttonWipeAllStorage,
         storagePrefix : null,
         wipeMsg : function () {
@@ -1338,6 +1341,7 @@ gha.util.DomUtil = {
     createButton : function (cfg) {
         var btn = document.createElement('button');
 
+        btn.id = cfg.id || "";
         btn.disabled = !!cfg.disabled;
         btn.style.cssText = cfg.style || "";
         btn.innerHTML = cfg.text || "";

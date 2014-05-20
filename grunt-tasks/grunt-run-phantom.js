@@ -9,10 +9,12 @@ module.exports = function(grunt) {
             }
         }, function (error, result, code) {
             if (error) {
-                console.log(error);
-                console.log(code);
+                if (code != 99) {
+                    console.log(error);
+                    console.log(code);
+                }
             }
-            done();
+            done(error);
         });
     });
 };

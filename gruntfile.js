@@ -7,6 +7,7 @@ module.exports = function(grunt) {
         files: ['**/*'],
         tasks: testTasks,
         options : {
+            atBegin : true,
             spawn : true
         }
     });
@@ -23,6 +24,6 @@ module.exports = function(grunt) {
 
     grunt.registerTask('lint', 'jshint');
     grunt.registerTask('test', testTasks);
-    grunt.registerTask('tdd', testTasks.concat('watch'));
+    grunt.registerTask('tdd', 'watch');
     grunt.registerTask('default', 'tdd');
 };

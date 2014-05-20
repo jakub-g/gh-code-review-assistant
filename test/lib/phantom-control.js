@@ -1,5 +1,6 @@
 // this file is executed in the scope of PhantomJS
 var webpage = require('webpage');
+var colors = require('colors');
 var debug = true;
 
 var br = "--------------------------------------------------------------------------------";
@@ -66,7 +67,7 @@ function getTestRunner (page) {
             var testFn = scopedInBrowser.wrapWithTryCatch();
             var ok = page.evaluate(testFn, test.testFn);
 
-            console.log( (ok ? " [ OK ] " : " [FAIL] ") + test.message);
+            console.log( (ok ? (" [ OK ] ".green) : (" [FAIL] ".red)) + test.message);
         }
     };
     return testRunner;
@@ -115,7 +116,7 @@ function openAndTest(url, gatherAndRunTests) {
         for (var i = 0; i < usPaths.length; i++) {
             console.log("* Injecting the userscript... (" + usPaths[i] + ")");
             var injected = page.injectJs(usPaths[i]);
-            console.log(injected ? "OK" : "FAILED");
+            // console.log("  " + (injected ? "OK" : "FAILED"));
             if (!injected) {
                 throw new Error("Can't inject userscript in the page...");
             }
@@ -140,11 +141,13 @@ function onTestSuiteFinished (page) {
 
     console.log("\n" + br);
     console.log("| Test suite summary: ");
-    console.log("| " + asserts._goodAsserts + " asserts OK");
-    console.log("| " + asserts._badAsserts + " asserts KO");
+    console.log(("| " + asserts._goodAsserts + " asserts OK").green);
+    if (hasFailures) {
+        console.log(("| " + asserts._badAsserts + " asserts KO").red);
+    }
     console.log(br);
 
-    phantom.exit(hasFailures ? 1 : 0);
+    phantom.exit(hasFailures ? 99 : 0);
 }
 
 module.exports = {

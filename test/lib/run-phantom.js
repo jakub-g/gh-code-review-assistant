@@ -15,5 +15,7 @@ if (cfg.pipeStdOut) {
 if (cfg.onData) {
     phantomProcess.stdout.on("data", cfg.onData);
 }
-phantomProcess.on("exit", cfg.onExit || function () {});
+phantomProcess.on("exit", function (code, signal) {
+    process.exit(code);
+});
 phantomProcess.on("error", cfg.onError || function () {});

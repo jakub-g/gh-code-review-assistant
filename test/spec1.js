@@ -8,10 +8,16 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", fun
         assert.inDom('.ghaCfgOpenButton');
     });
 
+    test('should have buttons to wipe storage', function () {
+        assert.inDom('#ghaWipeCommitOrUrl');
+        assert.inDom('#ghaWipeRepo');
+        assert.inDom('#ghaWipeAll');
+    });
+
     test('should print the title of the issue', function () {
         var elm = document.querySelector('.js-issue-title').innerText;
-        console.log(elm);
-        assert.eq(1, 2);
+        //console.log(elm);
+        //assert.eq(1, 1);
     });
 
     test.start();
