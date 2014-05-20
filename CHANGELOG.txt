@@ -1,0 +1,69 @@
+// Changelog:
+// 0.1
+//  initial version
+// 0.1.2
+//  includes pull requests
+// 0.1.3
+//  do not fire the event on child nodes
+// 0.1.4
+//  fire intelligently on some child nodes
+// 0.2.0
+//  'expand all' / 'collapse all' button
+//  auto hiding on long diff
+//  code refactor
+// 0.3.0
+//  code review mark button
+// 0.4.0-20130201
+//  accomodated to new GH HTML markup
+// 0.4.1-20130212
+//  enabled also on /compare/ URLs
+// 0.5.0-20130305
+//  Works also in Chrome (Tampermonkey) now!
+// 0.6.0-20130404
+//  Added sidebar and footer to quickly go to the beginning of the current file.
+//  Added additional button to mark file as problematic (OK / Fail).
+//  After clicking "Reviewed" on file n, scroll to file n, and make the file n+1 expanded.
+// 0.6.1.20130417
+//  Fix the ugly text shadow on marked files
+// 0.6.2.20130417
+//  Refactor, comments
+// 0.9.0.20130418
+//  Local storage support to preserve the review across page refreshes!
+// 0.9.1.20130418
+//  Moved to separate GitHub repository
+// 0.9.2.20130418
+//  Fixed regression from 0.6.2 (reviewed file was not hiding on Fail/Ok click)
+// 0.9.3.20130419
+//  Major code refactor; fixed margin issue with inline comment button on the left
+// 0.9.4.20130603
+//  Do not hide files passed in the hash of the URL
+// 0.9.5.20130801
+//  Bring back 'Wipe GHA storage' buttons that disappeared after GH markup change
+// 0.9.6.20130913
+//  After reviewing an item, the next item is not expanded if it was reviewed; first unreviewed is expanded.
+//  (Experimental, disabled) Add 'contenteditable' to be able to inline edit the code of the diffs (each line separately);
+//    edits are not saved, not preserved on refresh
+// 0.10.0.20130913
+//  Support for navigating and executing all the buttons from keyboard.
+//  Upon finishing the review of a diff, the next item's to be reviewed filename gets focus.
+//  Updating the view accordingly on GHA storage wipe.
+// 0.10.1.20130917
+//  Expand/collapse button was not keyboard-friendly. Fixed.
+// 0.10.2.20131001
+//  Option to hide "Open in GitHub for Windows"
+// 0.10.3.20131004
+//  Now if sth like #diff-046dc342b82cf4f293c2f533e24aeec2 is passed in the URL (as GH uses in some links),
+//  the proper file will not be hidden.
+// 0.10.4.20131025
+//  When loading state from local storage, never-reviewed items were sometimes mistakenly marked as reviewed.
+// 1.0.0.20140407
+//  - Customizing settings right in the browser
+//  - Importing/exporting code review status through the hash in the URL
+//  - Third button state: expand unreviewed
+//  - Now using canonical SHA1 in storage
+//  - Commits with same SHA1 across forks are now sharing code review status
+//  - Added button to wipe just status for current URL
+//  - Some other little fixes
+// 1.0.1.20140410
+//  Fixed a bug where GHA would not start and throw an exception on repos with dots, underscores
+//  or uppercase chars in reponame or username
