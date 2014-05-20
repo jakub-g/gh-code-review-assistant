@@ -32,7 +32,7 @@ var scopedInBrowser = {
                 }
                 this._goodAsserts++;
             }
-        }
+        };
     },
 
     wrapWithTryCatch : function () {
@@ -47,9 +47,9 @@ var scopedInBrowser = {
                 console.log(e);
                 return false;
             }
-        }
+        };
     }
-}
+};
 
 function getTestRunner (page) {
     var pendingTests = [];
@@ -68,7 +68,7 @@ function getTestRunner (page) {
 
             console.log( (ok ? " [ OK ] " : " [FAIL] ") + test.message);
         }
-    }
+    };
     return testRunner;
 }
 
@@ -145,7 +145,7 @@ function onTestSuiteFinished (page) {
     console.log(br);
 
     phantom.exit(hasFailures ? 1 : 0);
-};
+}
 
 module.exports = {
     /**
@@ -174,7 +174,7 @@ module.exports = {
      * @param {String} userScriptPath
      */
     userScript : function (userScriptPath) {
-        this.userScriptPaths.push(userScriptPath)
+        this.userScriptPaths.push(userScriptPath);
         return this;
     },
     

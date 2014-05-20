@@ -2,7 +2,8 @@
   "name": "gh-code-review-assistant",
   "version": "0.0.0",
   "scripts": {
-    "test": "node ./test/lib/run-phantom.js"
+    "test": "grunt test && node ./test/lib/run-phantom.js",
+    "tdd": "grunt tdd"
   },
   "repository": {
     "type": "git",
@@ -13,5 +14,10 @@
   "bugs": {
     "url": "https://github.com/jakub-g/gh-code-review-assistant/issues"
   },
-  "homepage": "https://github.com/jakub-g/gh-code-review-assistant"
+  "homepage": "https://github.com/jakub-g/gh-code-review-assistant",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-contrib-watch": "^0.6.1"
+  }
 }
