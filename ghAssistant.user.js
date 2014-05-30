@@ -128,17 +128,13 @@ var gha = {
     DomUtil : {},
     VisibilityManager : {},
     ReviewStatusMarker : {},
-    StatusExporter : {}
+    StatusExporter : {},
     Cfg : {},
     Storage : {},
     ClickHandlers : {},
 };
 
 // =================================================================================================
-
-var global = this;
-global.GM_getValue = global.GM_getValue || function () {};
-global.GM_setValue = global.GM_setValue || function () {};
 
 (function(){
     // for easier regexes
@@ -1319,7 +1315,11 @@ gha.DomUtil = {
 
 // =================================================================================================
 
+var global = this;
 var main = function () {
+    global.GM_getValue = global.GM_getValue || function () {};
+    global.GM_setValue = global.GM_setValue || function () {};
+
     gha.Cfg.synchronizeSettingsWithBrowser();
 
     var nbOfFiles = gha.DomReader.getNumberOfFiles();
