@@ -1296,21 +1296,28 @@ gha.files = {
     }
 };
 
+gha.config = {
+    getDynamicConfig : function (CONFIG, nbOfFiles) {
+        var EVALEDCONFIG = {
+            autoHide : false,
+            autoHideLong : false
+        };
+        if (nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
+            if (CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
+                EVALEDCONFIG.autoHide = true;
+            } else if (CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
+                EVALEDCONFIG.autoHideLong = true;
+            }
+        }
+        return EVALEDCONFIG;
+    }
+};
+
 var main = function () {
     gha.util.Cfg.synchronizeSettingsWithBrowser();
 
-    var EVALEDCONFIG = {
-        autoHide : false,
-        autoHideLong : false
-    };
     var nbOfFiles = gha.files.getNumberOfFiles();
-    if (nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
-        if (CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
-            EVALEDCONFIG.autoHide = true;
-        } else if (CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
-            EVALEDCONFIG.autoHideLong = true;
-        }
-    }
+    var EVALEDCONFIG = gha.config.getDynamicConfig(CONFIG, nbOfFiles);
 
     // let's go
     gha.instance.storage = new gha.classes.GHALocalStorage();
@@ -1321,9 +1328,9 @@ var main = function () {
 
     gha.util.DomWriter.attachGlobalCss();
     gha.util.DomWriter.attachToggleDisplayOnClickListeners();
-    if(EVALEDCONFIG.autoHide) {
+    if (EVALEDCONFIG.autoHide) {
         gha.util.VisibilityManager.toggleDisplayAll(false, true);
-    }else if(EVALEDCONFIG.autoHideLong) {
+    } else if (EVALEDCONFIG.autoHideLong) {
         gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines.val);
     }
     gha.util.VisibilityManager.restoreElementsFromHash();
