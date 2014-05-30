@@ -152,22 +152,20 @@ var isPositiveInteger = function (str) {
 
 gha.util.DomReader = {};
 
+
+gha.util.DomReader.getNumberOfFiles = function () {
+    return gha.util.DomReader.getDiffContainers().length;
+};
+
 /**
  * Get a list of containers of the each diff-file.
  */
 gha.util.DomReader.getDiffContainers = function() {
     var mainDiffDiv = document.getElementById('files');
-    var children = mainDiffDiv.children;
-    var nbOfCommits = children.length;
-
-    var out = [];
-    for(var i=0, ii = nbOfCommits; i<ii; i++) {
-        var child = children[i];
-        if(child.id && child.id.indexOf('diff-') === 0){
-            out.push(child);
-        }
-    }
-    return out;
+    var files = [].filter.call(mainDiffDiv.children, function (elm) {
+        return elm.nodeName == "DIV" && elm.classList.contains('file'); // elm.id.match(/^diff\-/);
+    });
+    return files;
 };
 
 gha.util.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
@@ -1286,16 +1284,6 @@ gha.util.DomUtil = {
 
 // =================================================================================================
 
-gha.files = {
-    getNumberOfFiles : function () {
-        var mainDiffDiv = document.getElementById('files');
-        var files = [].filter.call(mainDiffDiv.children, function (elm) {
-            return elm.nodeName == "DIV" && elm.classList.contains('file'); // elm.id.match(/^diff\-/);
-        });
-        return files.length;
-    }
-};
-
 gha.config = {
     getDynamicConfig : function (CONFIG, nbOfFiles) {
         var EVALEDCONFIG = {
@@ -1316,7 +1304,7 @@ gha.config = {
 var main = function () {
     gha.util.Cfg.synchronizeSettingsWithBrowser();
 
-    var nbOfFiles = gha.files.getNumberOfFiles();
+    var nbOfFiles = gha.util.DomReader.getNumberOfFiles();
     var EVALEDCONFIG = gha.config.getDynamicConfig(CONFIG, nbOfFiles);
 
     // let's go
