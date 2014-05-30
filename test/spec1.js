@@ -18,10 +18,6 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CON
         assert.inDom('#ghaWipeAll');
     });
 
-    test('should have buttons to toggle expanded files', function () {
-        assert.inDom('#ghaToggleCollapseExpand');
-    });
-
     test('should count number of files properly', function (CONF) {
         var expectedFiles = CONF.filesOnPage;
         assert.eq(gha.DomReader.getNumberOfFiles(), expectedFiles);
@@ -34,34 +30,83 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CON
     });
 
     test('toggle fail button changes files style', function () {
+        var helpers = assert.helpers;
         var elems = document.querySelectorAll('.ghaToggleFileStateFail');
         assert.inDom('.ghaFileStateFail', 0);
-        assert.helpers.click(elems[0]);
+        helpers.click(elems[0]);
         assert.inDom('.ghaFileStateFail', 1);
-        assert.helpers.click(elems[1]);
+        helpers.click(elems[1]);
         assert.inDom('.ghaFileStateFail', 2);
-        assert.helpers.click(elems[0]);
+        helpers.click(elems[0]);
         assert.inDom('.ghaFileStateFail', 1);
-        assert.helpers.click(elems[1]);
+        helpers.click(elems[1]);
         assert.inDom('.ghaFileStateFail', 0);
     });
 
     test('toggle ok button changes files style', function () {
+        var helpers = assert.helpers;
         var elems = document.querySelectorAll('.ghaToggleFileStateOk');
         assert.inDom('.ghaFileStateOk', 0);
-        assert.helpers.click(elems[2]);
-        assert.helpers.click(elems[1]);
+        helpers.click(elems[2]);
+        helpers.click(elems[1]);
         assert.inDom('.ghaFileStateOk', 2);
-        assert.helpers.click(elems[2]);
-        assert.helpers.click(elems[1]);
+        helpers.click(elems[2]);
+        helpers.click(elems[1]);
         assert.inDom('.ghaFileStateOk', 0);
     });
 
-    test('should print the title of the issue', function () {
+    test('has buttons to toggle expanded files', function () {
+        assert.inDom('#ghaToggleCollapseExpand');
+    });
+
+
+    test('expand/collapse files button toggles in a good direction', function () {
+        var helpers = assert.helpers;
+        var btn = document.querySelector('#ghaToggleCollapseExpand');
+
+        assert.eq(btn.innerHTML, L10N.collapseAll);
+        helpers.click(btn);
+        assert.eq(btn.innerHTML, L10N.expandUnreviewed);
+        helpers.click(btn);
+        assert.eq(btn.innerHTML, L10N.expandAll);
+        helpers.click(btn);
+        assert.eq(btn.innerHTML, L10N.collapseAll);
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*test('should print the title of the issue', function () {
         var elm = document.querySelector('.js-issue-title').innerText;
         //console.log(elm);
         //assert.eq(1, 1);
-    });
+    });*/
 
     test.start();
 });

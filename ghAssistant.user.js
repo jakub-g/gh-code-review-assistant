@@ -962,18 +962,13 @@ gha.VisibilityManager.hideLongDiffs = function(minDiff) {
 gha.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromUrlHash) {
 
     bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
-    var mainDiffDiv = document.getElementById('files');
-    var children = mainDiffDiv.children;
-    var nbOfCommits = children.length;
+    
+    var diffContainers = gha.DomReader.getDiffContainers();
+    var nbOfCommits = diffContainers.length;
 
     var hashInUrl = document.location.hash.replace('#', '');
-    for (var i=0, ii = nbOfCommits; i<ii; i++) {
-        var child = children[i];
-        if(!child.id || child.id.indexOf('diff-') == -1){
-            continue;
-        }
-
-        var diffContainer = child;
+    for (var i = 0, ii = nbOfCommits; i < ii; i++) {
+        var diffContainer = diffContainers[i];
         var diffContainerHeader = diffContainer.children[0];
         var diffContainerBody = diffContainer.children[1];
         var fileName = diffContainer.querySelector('.meta').getAttribute('data-path');
