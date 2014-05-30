@@ -18,6 +18,10 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", fun
         assert.inDom('#ghaToggleCollapseExpand');
     });
 
+    test('should count number of files properly', function () {
+        assert.eq(gha.files.getNumberOfFiles(), 3);
+    });
+
     test('should print the title of the issue', function () {
         var elm = document.querySelector('.js-issue-title').innerText;
         //console.log(elm);

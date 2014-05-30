@@ -483,7 +483,8 @@ gha.util.DomWriter._attachReviewStatusButton = function (diffContainer, text /*a
     }
 
     var newButton = document.createElement('a');
-    newButton.className = 'minibutton ghaToggleFileState';
+    newButton.className = 'minibutton ghaToggleFileState ghaToogleFileState' + (text == L10N.ok ? 'Ok' : 'Fail');
+
     newButton.href = "javascript:void(0)"; // crucial to make it launchable from keyboard
     newButton.tabIndex = 0;
     newButton.innerHTML = text;
@@ -1285,20 +1286,29 @@ gha.util.DomUtil = {
 
 // =================================================================================================
 
+gha.files = {
+    getNumberOfFiles : function () {
+        var mainDiffDiv = document.getElementById('files');
+        var files = [].filter.call(mainDiffDiv.children, function (elm) {
+            return elm.nodeName == "DIV" && elm.classList.contains('file'); // elm.id.match(/^diff\-/);
+        });
+        return files.length;
+    }
+};
+
 var main = function () {
     gha.util.Cfg.synchronizeSettingsWithBrowser();
 
-    // read config
-    var mainDiffDiv = document.getElementById('files');
-    var nbOfFiles = mainDiffDiv.children.length;
-
-    var autoHide = false;
-    var autoHideLong = false;
-    if(nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
-        if(CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
-            autoHide = true;
-        }else if(CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
-            autoHideLong = true;
+    var EVALEDCONFIG = {
+        autoHide : false,
+        autoHideLong : false
+    };
+    var nbOfFiles = gha.files.getNumberOfFiles();
+    if (nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
+        if (CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
+            EVALEDCONFIG.autoHide = true;
+        } else if (CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
+            EVALEDCONFIG.autoHideLong = true;
         }
     }
 
@@ -1311,13 +1321,13 @@ var main = function () {
 
     gha.util.DomWriter.attachGlobalCss();
     gha.util.DomWriter.attachToggleDisplayOnClickListeners();
-    if(autoHide) {
+    if(EVALEDCONFIG.autoHide) {
         gha.util.VisibilityManager.toggleDisplayAll(false, true);
-    }else if(autoHideLong) {
+    }else if(EVALEDCONFIG.autoHideLong) {
         gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines.val);
     }
     gha.util.VisibilityManager.restoreElementsFromHash();
-    gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
+    gha.util.DomWriter.attachCollapseExpandDiffsButton(EVALEDCONFIG.autoHide);
 
     gha.util.DomWriter.attachPerDiffFileFeatures();
 
