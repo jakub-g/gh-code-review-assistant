@@ -19,7 +19,7 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", fun
     });
 
     test('should count number of files properly', function () {
-        assert.eq(gha.util.DomReader.getNumberOfFiles(), 3);
+        assert.eq(gha.DomReader.getNumberOfFiles(), 3);
     });
 
     test('should print the title of the issue', function () {
