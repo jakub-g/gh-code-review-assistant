@@ -18,20 +18,20 @@ var scopedInBrowser = {
                 }
                 this._goodAsserts++;
             },
-            inDom : function (selector, times) {
-                var expected = (times === undefined ?  1 : times);
-                var actual = document.querySelectorAll(selector).length;
-
-                var msg = "Expected to find " + expected + " nodes matching '" + selector + "'" + " but found " + actual;
-                this.eq(expected, actual, msg);
-            },
-            length : function (item, len, optMsg) {
+            len : function (item, len, optMsg) {
                 optMsg = optMsg || "";
                 if (item.length != len) {
                     this._badAsserts++;
                     throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
                 }
                 this._goodAsserts++;
+            },
+            inDom : function (selector, times) {
+                var expected = (times === undefined ?  1 : times);
+                var actual = document.querySelectorAll(selector).length;
+
+                var msg = "Expected to find " + expected + " nodes matching '" + selector + "'" + " but found " + actual;
+                this.eq(expected, actual, msg);
             },
             helpers : {
                 click : function (elem) {

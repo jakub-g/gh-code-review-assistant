@@ -6,7 +6,7 @@ var phantomUtil = require('./lib/phantom-control.js')
 var CONF = {
     filesOnPage : 3
 };
-
+//phantomUtil.evalInPageScope
 phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
     test('should have the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
@@ -27,6 +27,57 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CON
         assert.inDom('.ghaToggleFileState', CONF.filesOnPage * 2);
         assert.inDom('.ghaToggleFileStateFail', CONF.filesOnPage);
         assert.inDom('.ghaToggleFileStateOk', CONF.filesOnPage);
+    });
+
+    test('has buttons to toggle expanded files', function () {
+        assert.inDom('#ghaToggleCollapseExpand');
+    });
+
+    // this has to be done before toggle fail button changes files style
+    test('expand/collapse files button toggles in a good direction', function () {
+        var helpers = assert.helpers;
+        var getVisible = function (filesBodies) {
+            return filesBodies.filter(function (elem){
+                return getComputedStyle(elem).display != "none";
+            });
+        };
+
+        var toggleLastElem = function () {
+            // taking the last one since clicking the last button should not expand anything else
+            var okBtns = document.querySelectorAll('.ghaToggleFileStateOk');
+            var btnReviewLastOk = okBtns[okBtns.length - 1];
+            helpers.click(btnReviewLastOk);
+        };
+
+        // button under test
+        var BUT = document.querySelector('#ghaToggleCollapseExpand');
+
+        var filesBodies = gha.DomReader.getDiffContainers().map(function(elem) {
+            return elem.children[1];
+        });
+        assert.len(filesBodies, 3);
+
+        // note the cycle start depends on the number of files and a cfg option
+
+        assert.len(getVisible(filesBodies), 3);
+        assert.eq(BUT.innerHTML, L10N.collapseAll);
+
+        helpers.click(BUT); // collapsing all
+        assert.len(getVisible(filesBodies), 0);
+        assert.eq(BUT.innerHTML, L10N.expandUnreviewed);
+
+        toggleLastElem(); // let's have 1 elem in reviewed state for the tests
+        assert.len(getVisible(filesBodies), 0);
+
+        helpers.click(BUT); // expanding 2 unreviewed
+        assert.len(getVisible(filesBodies), 2);
+        assert.eq(BUT.innerHTML, L10N.expandAll);
+
+        helpers.click(BUT); // expanding all 3
+        assert.len(getVisible(filesBodies), 3);
+        assert.eq(BUT.innerHTML, L10N.collapseAll);
+
+        toggleLastElem(); // reset
     });
 
     test('toggle fail button changes files style', function () {
@@ -55,23 +106,6 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CON
         assert.inDom('.ghaFileStateOk', 0);
     });
 
-    test('has buttons to toggle expanded files', function () {
-        assert.inDom('#ghaToggleCollapseExpand');
-    });
-
-
-    test('expand/collapse files button toggles in a good direction', function () {
-        var helpers = assert.helpers;
-        var btn = document.querySelector('#ghaToggleCollapseExpand');
-
-        assert.eq(btn.innerHTML, L10N.collapseAll);
-        helpers.click(btn);
-        assert.eq(btn.innerHTML, L10N.expandUnreviewed);
-        helpers.click(btn);
-        assert.eq(btn.innerHTML, L10N.expandAll);
-        helpers.click(btn);
-        assert.eq(btn.innerHTML, L10N.collapseAll);
-    });
 
 
 
