@@ -155,6 +155,8 @@ var isPositiveInteger = function (str) {
     return String(n) === str && n >= 0;
 };
 
+// =================================================================================================
+
 gha.DomReader = {};
 
 /**
@@ -648,6 +650,21 @@ gha.Cfg.synchronizeSettingsWithBrowser = function () {
 gha.Cfg.setValue = function (key, value) {
     CONFIG[key].val = value;
     GM_setValue(key, value);
+};
+
+gha.Cfg.getDynamicConfig = function (CONFIG, nbOfFiles) {
+    var EVALEDCONFIG = {
+        autoHide : false,
+        autoHideLong : false
+    };
+    if (nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
+        if (CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
+            EVALEDCONFIG.autoHide = true;
+        } else if (CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
+            EVALEDCONFIG.autoHideLong = true;
+        }
+    }
+    return EVALEDCONFIG;
 };
 
 gha.Cfg.createCfgOpenButton = function (div) {
@@ -1293,28 +1310,11 @@ gha.DomUtil = {
 
 // =================================================================================================
 
-gha.config = {
-    getDynamicConfig : function (CONFIG, nbOfFiles) {
-        var EVALEDCONFIG = {
-            autoHide : false,
-            autoHideLong : false
-        };
-        if (nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
-            if (CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
-                EVALEDCONFIG.autoHide = true;
-            } else if (CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
-                EVALEDCONFIG.autoHideLong = true;
-            }
-        }
-        return EVALEDCONFIG;
-    }
-};
-
 var main = function () {
     gha.Cfg.synchronizeSettingsWithBrowser();
 
     var nbOfFiles = gha.DomReader.getNumberOfFiles();
-    var EVALEDCONFIG = gha.config.getDynamicConfig(CONFIG, nbOfFiles);
+    var EVALEDCONFIG = gha.Cfg.getDynamicConfig(CONFIG, nbOfFiles);
 
     // let's go
     gha.instance.storage = new gha.classes.GHALocalStorage();
