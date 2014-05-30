@@ -122,7 +122,6 @@ Enjoy the new version!";
 
 var gha = {
     classes : {},  // classes to be instantiated
-    util : {},     // classes with static methods
     instance : {}  // holder of instantiated storage
 };
 
@@ -132,10 +131,16 @@ var global = this;
 global.GM_getValue = global.GM_getValue || function () {};
 global.GM_setValue = global.GM_setValue || function () {};
 
-var pageId = document.location.pathname.replace(/\//g,'#'); // for easier regexes
-var isCommit  = pageId.match(/^#.*?#.*?#commit/);
-var isPull    = pageId.match(/^#.*?#.*?#pull/);
-var isCompare = pageId.match(/^#.*?#.*?#compare/);
+(function(){
+    // for easier regexes
+    var pageId = document.location.pathname.replace(/\//g,'#');
+    gha.Page = {
+        pageId    : pageId,
+        isCommit  : pageId.match(/^#.*?#.*?#commit/),
+        isPull    : pageId.match(/^#.*?#.*?#pull/),
+        isCompare : pageId.match(/^#.*?#.*?#compare/),
+    };
+})();
 
 var makeDiv = function (cssClassName) {
     return makeElem('div', cssClassName);
@@ -669,7 +674,7 @@ gha.DomWriter.attachStorageWipeButtons = function (parentDiv) {
 
     var buttonCurrentEntity = gha.Storage.createWipeButton({
         id : "ghaWipeCommitOrUrl",
-        text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
+        text : (gha.Page.isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
         storagePrefix : storage._objectId,
         wipeMsg : function () {
             return L10N.questionWipeEntry  + storage._objectId + " \n%TODEL?";
@@ -858,7 +863,7 @@ gha.Storage.createWipeButton = function (cfg) {
         if (nItemsToBeDeleted === 0) {
             if (prefix) {
                 msg = L10N.noEntriesFoundPrefix + prefix.replace(storage._prefix, "");
-                if (isCommit) {
+                if (gha.Page.isCommit) {
                     var nOrphanedCommits = storage.checkOrphanedCommits();
                     if (nOrphanedCommits > 0) {
                         msg += "\n\n" + L10N.orphanedCommitsInfo.replace("%ORPH", nOrphanedCommits);
@@ -1133,13 +1138,13 @@ gha.classes.GHALocalStorage = function () {
     this._repoId = null;
 
     this.init = function () {
-        var matches = pageId.match(/^#([A-Za-z0-9_\-\.]+#[A-Za-z0-9_\-\.]+)#(?:commit|pull|compare)#([A-Za-z0-9_\-\.]+)/);
+        var matches = gha.Page.pageId.match(/^#([A-Za-z0-9_\-\.]+#[A-Za-z0-9_\-\.]+)#(?:commit|pull|compare)#([A-Za-z0-9_\-\.]+)/);
         if (matches) {
             // we want repoId to be a leading substring of objectId
             this._objectId = matches[0];     // sth like "#ariatemplates#ariatemplates#pull#1060"
             this._repoId = "#" + matches[1]; // sth like "#ariatemplates#ariatemplates"
 
-            if (isCommit) {
+            if (gha.Page.isCommit) {
                 // Use canonical SHA1 of the commit, the URL might contain shortened one
                 // or sth like some-other-sha^^ etc.
                 // However fallback to matches[2] just in case GH changed the selector or something
@@ -1148,7 +1153,7 @@ gha.classes.GHALocalStorage = function () {
             }
             //debugger;
         } else {
-            console.error("Unable to create a local storage key for " + pageId);
+            console.error("Unable to create a local storage key for " + gha.Page.pageId);
             this.saveState = this.loadState = this.clearState = function () {};
         }
     };
