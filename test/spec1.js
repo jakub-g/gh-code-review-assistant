@@ -6,8 +6,9 @@ var phantomUtil = require('./lib/phantom-control.js')
 var CONF = {
     filesOnPage : 3
 };
+
 //phantomUtil.evalInPageScope
-phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
+phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
     test('should have the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
     });
@@ -80,6 +81,11 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CON
         toggleLastElem(); // reset
     });
 
+    test.start();
+});
+
+phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
+
     test('toggle fail button changes files style', function () {
         var helpers = assert.helpers;
         var elems = document.querySelectorAll('.ghaToggleFileStateFail');
@@ -106,41 +112,7 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", CON
         assert.inDom('.ghaFileStateOk', 0);
     });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*test('should print the title of the issue', function () {
-        var elm = document.querySelector('.js-issue-title').innerText;
-        //console.log(elm);
-        //assert.eq(1, 1);
-    });*/
-
     test.start();
 });
+
+phantomUtil.start();

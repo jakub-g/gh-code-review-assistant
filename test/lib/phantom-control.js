@@ -80,7 +80,7 @@ function getTestRunner (page, userSuppliedConf) {
     return testRunner;
 }
 
-function openAndTest(url, userSuppliedConf, gatherAndRunTests) {
+function openAndTest(url, userSuppliedConf, gatherAndRunTests, suiteId, done) {
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
         var padding = '  >>> ' ;
@@ -136,25 +136,28 @@ function openAndTest(url, userSuppliedConf, gatherAndRunTests) {
         gatherAndRunTests(getTestRunner(page, userSuppliedConf));
         console.log("\n* Tests finished.");
 
-        onTestSuiteFinished(page);
+        onTestSuiteFinished(page, {
+            id : suiteId,
+            count : _this.registeredSuites.length
+        }, done);
     });
 }
 
-function onTestSuiteFinished (page) {
+function onTestSuiteFinished (page, suite, done) {
     var asserts = page.evaluate(function () {
         return window.assert;
     });
     var hasFailures = asserts._badAsserts > 0;
 
     console.log("\n" + br);
-    console.log("| Test suite summary: ");
+    console.log("| Test suite " + (suite.id + 1) + " out of " + suite.count + ": ");
     console.log(("| " + asserts._goodAsserts + " asserts OK").green);
     if (hasFailures) {
         console.log(("| " + asserts._badAsserts + " asserts KO").red);
     }
     console.log(br);
 
-    phantom.exit(hasFailures ? 99 : 0);
+    done(hasFailures ? 99 : 0);
 }
 
 module.exports = {
@@ -187,6 +190,60 @@ module.exports = {
         this.userScriptPaths.push(userScriptPath);
         return this;
     },
+    userScriptPaths : [],
 
-    userScriptPaths : []
+    /**
+     * Registers a suite to be executed via `openAndTest`. Params expected are same
+     * as for `openAndTest`.
+     * @see openAndTest
+     */
+    registerSuite : function (/*args*/) {
+        this.registeredSuites.push([].slice.call(arguments, 0));
+    },
+    registeredSuites : [],
+
+
+
+    /**
+     * Returns a callback function that will be called upon finishing of suite n.
+     * The callback runs n+1-st suite, or in case of last suite, exits PhantomJS,
+     * with proper exit code (failure code if any of suites failed, 0 otherwise).
+     * @param {Integer} n
+     * @return {Function}
+     */
+    _getSuiteDoneCb : function (n) {
+        var that = this;
+        var nSuites = this.registeredSuites.length;
+        var exitCodes = [];
+        return function (exitCode) {
+            // printing in 1-based values for user-friendliness
+            // console.log("Test suite " + (n+1) + " finished with code " + exitCode);
+            exitCodes.push(exitCode);
+            if (n + 1 < nSuites) {
+                that.startSuite(n + 1);
+            } else {
+                var hasError = exitCodes.indexOf(99) > -1;
+                console.log("All suites finished" + (hasError ? ", there were some failures." : " OK"));
+                phantom.exit(hasError ? 99 : 0);
+            }
+        };
+    },
+    startSuite : function (n) {
+        var args = this.registeredSuites[n];
+        args.push(n, this._getSuiteDoneCb(n));
+        this.openAndTest.apply(this, args);
+    },
+
+    /**
+     * Main entry point - starts the first suite to be executed.
+     */
+    start : function () {
+        if (this.registeredSuites.length > 0) {
+            this.startSuite(0);
+        } else {
+            console.error("No suites registered!");
+            phantom.exit(98);
+        }
+    },
+
 };
