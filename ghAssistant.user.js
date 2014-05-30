@@ -178,7 +178,7 @@ gha.util.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerH
 
 gha.util.DomWriter = {};
 
-gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghaButtonState';
+gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghaFileState';
 
 gha.util.DomWriter.attachGlobalCss = function () {
     var css = [];
@@ -188,38 +188,38 @@ gha.util.DomWriter.attachGlobalCss = function () {
 
     css.push('a.ghaFileNameSpan {text-decoration: none; margin-left: -10px;  padding: 0 10px;}'); // so that the box's outline looks nicer when focused
 
-    css.push('.ghaButtonStateNormal {\
+    css.push('.ghaFileStateNormal {\
         background-image:   linear-gradient(to bottom, #fafafa, #eaeaea) !important;\
     }');
-    css.push('.ghaButtonStateOk {\
+    css.push('.ghaFileStateOk {\
         background-image:   linear-gradient(to bottom, #333, #444) !important;\
         text-shadow: none !important;\
     }');
-    css.push('.ghaButtonStateFail {\
+    css.push('.ghaFileStateFail {\
         background-image:   linear-gradient(to bottom, #833, #844) !important;\
         text-shadow: none !important;\
     }');
 
-    css.push('.ghaButtonStateNormal a.ghaFileNameSpan { color: #555 !important;}');
-    css.push('.ghaButtonStateOk     a.ghaFileNameSpan { color: #fff !important;}');
-    css.push('.ghaButtonStateFail   a.ghaFileNameSpan { color: #fff !important;}');
+    css.push('.ghaFileStateNormal a.ghaFileNameSpan { color: #555 !important;}');
+    css.push('.ghaFileStateOk     a.ghaFileNameSpan { color: #fff !important;}');
+    css.push('.ghaFileStateFail   a.ghaFileNameSpan { color: #fff !important;}');
 
     // we have border, let's tell Firefox not to add its default dotted outline
     css.push('.minibutton:focus {outline: 0;}');
 
-    css.push('.ghaButtonStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
-    css.push('.ghaButtonStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
-    css.push('.ghaButtonStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
+    css.push('.ghaFileStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
+    css.push('.ghaFileStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
+    css.push('.ghaFileStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
 
     // default GH CSS is suited only for their one button "view file", let's fix it as we add 2 more buttons
-    css.push('.ghaButtonStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghaButtonStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
-    css.push('.ghaButtonStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaFileStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaFileStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaFileStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
 
     css.push('.ghaFileNameSpan:focus {outline:0; border-radius:5px;}');
-    css.push('.ghaButtonStateNormal .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghaButtonStateFail   .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
-    css.push('.ghaButtonStateOk     .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghaFileStateNormal .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaFileStateFail   .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghaFileStateOk     .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
 
     css.push('.ghaBottomButton {\
         margin:40px 5px 20px 15px;\
@@ -956,7 +956,7 @@ gha.util.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromU
         if (iVisible == 2) { // "display unreviewed" mode
             var cl = diffContainerHeader.classList;
             // reading this from DOM since for now, the import from URL feature just highlights items without affecting local storage..
-            if (cl.contains("ghaButtonStateFail") || cl.contains("ghaButtonStateOk")) {
+            if (cl.contains("ghaFileStateFail") || cl.contains("ghaFileStateOk")) {
                 style.display = "none";
             } else {
                 style.display = "block";
