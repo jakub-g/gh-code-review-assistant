@@ -18,11 +18,11 @@ var scopedInBrowser = {
                 }
                 this._goodAsserts++;
             },
-            inDom : function (selector) {
-                var expected = 1;
+            inDom : function (selector, times) {
+                var expected = (times === undefined ?  1 : times);
                 var actual = document.querySelectorAll(selector).length;
 
-                var msg = "Expected to find a node matching " + selector;
+                var msg = "Expected to find " + expected + " nodes matching '" + selector + "'" + " but found " + actual;
                 this.eq(expected, actual, msg);
             },
             length : function (item, len, optMsg) {
@@ -32,17 +32,24 @@ var scopedInBrowser = {
                     throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
                 }
                 this._goodAsserts++;
+            },
+            helpers : {
+                click : function (elem) {
+                    var evt = document.createEvent("HTMLEvents");
+                    evt.initEvent("click", true, true);
+                    elem.dispatchEvent(evt);
+                }
             }
         };
     },
 
-    wrapWithTryCatch : function () {
+    wrapWithTryCatch : function (userSuppliedConf) {
         // it's done this strange way due to how page.evaluate works
         // it wouldn't see the closure variables, hence the fn to be wrapped
         // is passed as a second param to page.evaluate
-        return function (origFn) {
+        return function (origFn, userSuppliedConf) {
             try {
-                origFn();
+                origFn(userSuppliedConf);
                 return true;
             } catch (e) {
                 console.log(e);
@@ -52,7 +59,7 @@ var scopedInBrowser = {
     }
 };
 
-function getTestRunner (page) {
+function getTestRunner (page, userSuppliedConf) {
     var pendingTests = [];
     var testRunner = function (message, testFn) {
         pendingTests.push({
@@ -65,7 +72,7 @@ function getTestRunner (page) {
         while (pendingTests.length > 0) {
             var test = pendingTests.shift();
             var testFn = scopedInBrowser.wrapWithTryCatch();
-            var ok = page.evaluate(testFn, test.testFn);
+            var ok = page.evaluate(testFn, test.testFn, userSuppliedConf);
 
             console.log( (ok ? (" [ OK ] ".green) : (" [FAIL] ".red)) + test.message);
         }
@@ -73,7 +80,7 @@ function getTestRunner (page) {
     return testRunner;
 }
 
-function openAndTest(url, gatherAndRunTests) {
+function openAndTest(url, userSuppliedConf, gatherAndRunTests) {
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
         var padding = '  >>> ' ;
@@ -126,7 +133,7 @@ function openAndTest(url, gatherAndRunTests) {
         page.evaluate(scopedInBrowser.defineXUnit);
 
         console.log("* Starting the tests... \n");
-        gatherAndRunTests(getTestRunner(page));
+        gatherAndRunTests(getTestRunner(page, userSuppliedConf));
         console.log("\n* Tests finished.");
 
         onTestSuiteFinished(page);
@@ -180,6 +187,6 @@ module.exports = {
         this.userScriptPaths.push(userScriptPath);
         return this;
     },
-    
+
     userScriptPaths : []
 };

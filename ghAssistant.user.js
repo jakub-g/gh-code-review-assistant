@@ -152,13 +152,17 @@ var isPositiveInteger = function (str) {
 
 gha.DomReader = {};
 
-
+/**
+ * How many files are there in current commit / pull request
+ * @return {Integer}
+ */
 gha.DomReader.getNumberOfFiles = function () {
     return gha.DomReader.getDiffContainers().length;
 };
 
 /**
  * Get a list of containers of the each diff-file.
+ * @return {Array}
  */
 gha.DomReader.getDiffContainers = function() {
     var mainDiffDiv = document.getElementById('files');
@@ -481,7 +485,7 @@ gha.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also c
     }
 
     var newButton = document.createElement('a');
-    newButton.className = 'minibutton ghaToggleFileState ghaToogleFileState' + (text == L10N.ok ? 'Ok' : 'Fail');
+    newButton.className = 'minibutton ghaToggleFileState ghaToggleFileState' + (text == L10N.ok ? 'Ok' : 'Fail');
 
     newButton.href = "javascript:void(0)"; // crucial to make it launchable from keyboard
     newButton.tabIndex = 0;
