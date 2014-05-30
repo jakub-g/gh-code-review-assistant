@@ -122,7 +122,16 @@ Enjoy the new version!";
 
 var gha = {
     classes : {},  // classes to be instantiated
-    instance : {}  // holder of instantiated storage
+    instance : {},  // holder of instantiated storage
+    DomReader : {},
+    DomWriter : {},
+    DomUtil : {},
+    VisibilityManager : {},
+    ReviewStatusMarker : {},
+    StatusExporter : {}
+    Cfg : {},
+    Storage : {},
+    ClickHandlers : {},
 };
 
 // =================================================================================================
