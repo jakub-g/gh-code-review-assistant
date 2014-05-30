@@ -404,6 +404,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
     var buttonBar = buttonBarContainer.children[0];
 
     var btn = document.createElement('a');
+    btn.id = 'ghaToggleCollapseExpand';
     btn.className = 'minibutton';
     btn.tabIndex = 0;
     btn.href = 'javascript:void(0);';
@@ -482,7 +483,7 @@ gha.util.DomWriter._attachReviewStatusButton = function (diffContainer, text /*a
     }
 
     var newButton = document.createElement('a');
-    newButton.className = 'minibutton';
+    newButton.className = 'minibutton ghaToggleFileState';
     newButton.href = "javascript:void(0)"; // crucial to make it launchable from keyboard
     newButton.tabIndex = 0;
     newButton.innerHTML = text;

@@ -14,6 +14,10 @@ phantomUtil.openAndTest("https://github.com/jakub-g/test-repo/pull/1/files", fun
         assert.inDom('#ghaWipeAll');
     });
 
+    test('should have buttons to toggle expanded files', function () {
+        assert.inDom('#ghaToggleCollapseExpand');
+    });
+
     test('should print the title of the issue', function () {
         var elm = document.querySelector('.js-issue-title').innerText;
         //console.log(elm);
