@@ -1,9 +1,8 @@
 // this file is executed in the scope of PhantomJS
 var webpage = require('webpage');
 var colors = require('colors');
-var debug = true;
 
-var br = "--------------------------------------------------------------------------------";
+var br = Array(101).join("-");
 
 var scopedInBrowser = {
     defineXUnit : function () {
@@ -43,13 +42,13 @@ var scopedInBrowser = {
         };
     },
 
-    wrapWithTryCatch : function (userSuppliedConf) {
+    wrapWithTryCatch : function (userConf) {
         // it's done this strange way due to how page.evaluate works
         // it wouldn't see the closure variables, hence the fn to be wrapped
         // is passed as a second param to page.evaluate
-        return function (origFn, userSuppliedConf) {
+        return function (origFn, userConf) {
             try {
-                origFn(userSuppliedConf);
+                origFn(userConf);
                 return true;
             } catch (e) {
                 console.log(e);
@@ -59,7 +58,7 @@ var scopedInBrowser = {
     }
 };
 
-function getTestRunner (page, userSuppliedConf) {
+function getTestRunner (page, userConf) {
     var pendingTests = [];
     var testRunner = function (message, testFn) {
         pendingTests.push({
@@ -72,15 +71,21 @@ function getTestRunner (page, userSuppliedConf) {
         while (pendingTests.length > 0) {
             var test = pendingTests.shift();
             var testFn = scopedInBrowser.wrapWithTryCatch();
-            var ok = page.evaluate(testFn, test.testFn, userSuppliedConf);
+            var ok = page.evaluate(testFn, test.testFn, userConf.args);
 
-            console.log( (ok ? (" [ OK ] ".green) : (" [FAIL] ".red)) + test.message);
+            console.log( (ok ? (" [ OK ] ".green.bold) : (" [FAIL] ".red.bold)) + test.message);
         }
     };
     return testRunner;
 }
 
-function openAndTest(url, userSuppliedConf, gatherAndRunTests, suiteId, done) {
+function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
+
+    userConf.phantom = userConf.phantom || {};
+    userConf.args = userConf.args || {};
+    var debug = userConf.phantom.debug || false;
+    var ignoredErrors = userConf.phantom.ignoredErrors || null;
+
     var page = webpage.create();
     page.onConsoleMessage = function (msg) {
         var padding = '  >>> ' ;
@@ -92,14 +97,22 @@ function openAndTest(url, userSuppliedConf, gatherAndRunTests, suiteId, done) {
         var isAssertFail = msg.indexOf(magicString) >= 0;
 
         if (debug && !isAssertFail) {
-            var msgStack = ['PHANTOM ERROR: ' + msg];
-            if (trace && trace.length) {
-                trace.forEach(function(t) {
-                  msgStack.push(' -> ' + (t.file || t.sourceURL) + ': ' + t.line + (t.function ? ' (in function ' + t.function +')' : ''));
+            var ignore = false;
+            if (ignoredErrors) {
+                ignore = ignoredErrors.some(function (ignoredMsg) {
+                    return msg.indexOf(ignoredMsg) > -1;
                 });
-                msgStack.push("");
             }
-            console.error(msgStack.join('\n'));
+            if (!ignore) {
+                var msgStack = ['PHANTOM ERROR: ' + msg];
+                if (trace && trace.length) {
+                    trace.forEach(function(t) {
+                      msgStack.push(' -> ' + (t.file || t.sourceURL) + ': ' + t.line + (t.function ? ' (in function ' + t.function +')' : ''));
+                    });
+                    msgStack.push("");
+                }
+                console.error(msgStack.join('\n'));
+            }
         }
 
         if (isAssertFail) {
@@ -112,9 +125,9 @@ function openAndTest(url, userSuppliedConf, gatherAndRunTests, suiteId, done) {
 
     var _this = this;
     page.open(url, function (status) {
-        console.log(br);
-        console.log("INITIALIZING THE TEST\n");
-        console.log("* URL: " + url + " loaded with status " + status);
+        console.log("\nInitializing the test:");
+        console.log("* Page loaded with status " + status);
+        //console.log("* URL: " + url.yellow + " loaded with status " + status);
 
         var usPaths = _this.userScriptPaths;
         if (!usPaths) {
@@ -133,8 +146,8 @@ function openAndTest(url, userSuppliedConf, gatherAndRunTests, suiteId, done) {
         page.evaluate(scopedInBrowser.defineXUnit);
 
         console.log("* Starting the tests... \n");
-        gatherAndRunTests(getTestRunner(page, userSuppliedConf));
-        console.log("\n* Tests finished.");
+        gatherAndRunTests(getTestRunner(page, userConf));
+        // console.log("\n* Tests finished.");
 
         onTestSuiteFinished(page, {
             id : suiteId,
@@ -149,13 +162,13 @@ function onTestSuiteFinished (page, suite, done) {
     });
     var hasFailures = asserts._badAsserts > 0;
 
-    console.log("\n" + br);
-    console.log("| Test suite " + (suite.id + 1) + " out of " + suite.count + ": ");
-    console.log(("| " + asserts._goodAsserts + " asserts OK").green);
+    var msg = "\n  Test suite " + (suite.id + 1) + " out of " + suite.count + " finished: ";
+    msg += (asserts._goodAsserts + " asserts OK").green.bold;
     if (hasFailures) {
-        console.log(("| " + asserts._badAsserts + " asserts KO").red);
+        msg += "; " + (asserts._badAsserts + " asserts KO").red.bold;
     }
-    console.log(br);
+    console.log(msg);
+    console.log(br + "\n");
 
     done(hasFailures ? 99 : 0);
 }
@@ -201,8 +214,7 @@ module.exports = {
         this.registeredSuites.push([].slice.call(arguments, 0));
     },
     registeredSuites : [],
-
-
+    _exitCodes : [],
 
     /**
      * Returns a callback function that will be called upon finishing of suite n.
@@ -214,22 +226,25 @@ module.exports = {
     _getSuiteDoneCb : function (n) {
         var that = this;
         var nSuites = this.registeredSuites.length;
-        var exitCodes = [];
         return function (exitCode) {
             // printing in 1-based values for user-friendliness
             // console.log("Test suite " + (n+1) + " finished with code " + exitCode);
-            exitCodes.push(exitCode);
-            if (n + 1 < nSuites) {
-                that.startSuite(n + 1);
+            that._exitCodes.push(exitCode);
+            var nextSuiteId = n+1;
+            if (nextSuiteId < nSuites) {
+                that.startSuite(nextSuiteId);
             } else {
-                var hasError = exitCodes.indexOf(99) > -1;
+                var hasError = that._exitCodes.indexOf(99) > -1;
                 console.log("All suites finished" + (hasError ? ", there were some failures." : " OK"));
                 phantom.exit(hasError ? 99 : 0);
             }
         };
     },
     startSuite : function (n) {
+        var nSuites = this.registeredSuites.length;
         var args = this.registeredSuites[n];
+        var url = args[0];
+        console.log("Starting test suite " + (n+1) + " out of " + nSuites + ": " + url.yellow);
         args.push(n, this._getSuiteDoneCb(n));
         this.openAndTest.apply(this, args);
     },
@@ -239,6 +254,7 @@ module.exports = {
      */
     start : function () {
         if (this.registeredSuites.length > 0) {
+            console.log(br);
             this.startSuite(0);
         } else {
             console.error("No suites registered!");

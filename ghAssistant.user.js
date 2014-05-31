@@ -165,14 +165,6 @@ var isPositiveInteger = function (str) {
 gha.DomReader = {};
 
 /**
- * How many files are there in current commit / pull request
- * @return {Integer}
- */
-gha.DomReader.getNumberOfFiles = function () {
-    return gha.DomReader.getDiffContainers().length;
-};
-
-/**
  * Get a list of containers of the each diff-file.
  * @return {Array}
  */
@@ -182,6 +174,14 @@ gha.DomReader.getDiffContainers = function() {
         return elm.nodeName == "DIV" && elm.classList.contains('file'); // elm.id.match(/^diff\-/);
     });
     return files;
+};
+
+/**
+ * How many files are there in current commit / pull request
+ * @return {Integer}
+ */
+gha.DomReader.getNumberOfFiles = function () {
+    return gha.DomReader.getDiffContainers().length;
 };
 
 gha.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
@@ -962,7 +962,7 @@ gha.VisibilityManager.hideLongDiffs = function(minDiff) {
 gha.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromUrlHash) {
 
     bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
-    
+
     var diffContainers = gha.DomReader.getDiffContainers();
     var nbOfCommits = diffContainers.length;
 

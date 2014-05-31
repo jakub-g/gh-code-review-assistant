@@ -3,12 +3,21 @@ var phantomUtil = require('./lib/phantom-control.js')
     .userScript("./polyfills/Function.bind.js")
     .userScript("../ghAssistant.user.js");
 
-var CONF = {
-    filesOnPage : 3
+var conf = {
+    phantom : {
+        debug : true,
+        ignoredErrors : [
+            "evaluating 'Array.prototype.forEach.call.bind",
+            "Can't find variable: $"
+        ]
+    },
+    args : {
+        filesOnPage : 3
+    }
 };
 
 //phantomUtil.evalInPageScope
-phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
+phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
     test('has the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
     });
@@ -19,15 +28,15 @@ phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", C
         assert.inDom('#ghaWipeAll');
     });
 
-    test('counts number of files properly', function (CONF) {
-        var expectedFiles = CONF.filesOnPage;
+    test('counts number of files properly', function (args) {
+        var expectedFiles = args.filesOnPage;
         assert.eq(gha.DomReader.getNumberOfFiles(), expectedFiles);
     });
 
-    test('injects fail/ok buttons proper nb. of times', function (CONF) {
-        assert.inDom('.ghaToggleFileState', CONF.filesOnPage * 2);
-        assert.inDom('.ghaToggleFileStateFail', CONF.filesOnPage);
-        assert.inDom('.ghaToggleFileStateOk', CONF.filesOnPage);
+    test('injects fail/ok buttons proper nb. of times', function (args) {
+        assert.inDom('.ghaToggleFileState', args.filesOnPage * 2);
+        assert.inDom('.ghaToggleFileStateFail', args.filesOnPage);
+        assert.inDom('.ghaToggleFileStateOk', args.filesOnPage);
     });
 
     test('has buttons to toggle expanded files', function () {
@@ -87,7 +96,7 @@ phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", C
     test.start();
 });
 
-phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
+phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
 
     test('toggle fail button changes files style', function () {
         var helpers = assert.helpers;
