@@ -1,3 +1,15 @@
+
+/**
+ * Tracks status of the specs; if any spec fails (i.e. phantom exits with error),
+ * then this becomes false.
+ **/
+var ok = true;
+
+/**
+ * Helper creating centered-aligned (space-padded) text for console printing
+ * @param {String} msg
+ * @return {String}
+ **/
 function alignCenter(msg) {
     var cols = process.stdout.columns;
     var len = msg.length;
@@ -10,11 +22,6 @@ function alignCenter(msg) {
 }
 
 module.exports = function(grunt) {
-    /**
-     * Tracks status of the specs; if any spec fails (i.e. phantom exits with error),
-     * then this becomes false.
-     **/
-    var ok = true;
 
     /**
      * Factory of phantom exit callbacks. Created callback for n-th spec runs the n+1-st spec,
@@ -74,13 +81,14 @@ module.exports = function(grunt) {
         console.log("\n" + bar.cyan);
         console.log(alignCenter(msg).cyan);
         console.log(bar.cyan + "\n");
+
         startPhantom(allSpecs[n], cfg, getPhantomExitCb(n, allSpecs, cfg, done));
     }
 
-    grunt.task.registerTask('run-phantom', function () {
-        grunt.config.requires('run-phantom');
-        grunt.config.requires('run-phantom.src');
-        var cfg = grunt.config.get('run-phantom');
+    grunt.task.registerTask('run-phantom-specs', function () {
+        grunt.config.requires('run-phantom-specs');
+        grunt.config.requires('run-phantom-specs.src');
+        var cfg = grunt.config.get('run-phantom-specs');
         var allSpecs = grunt.file.expand(cfg.src);
         if (allSpecs.length == 0) {
             grunt.fail.fatal('No matching specs found by expanding ' + specs.src);

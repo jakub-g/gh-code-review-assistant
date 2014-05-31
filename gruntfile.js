@@ -3,7 +3,7 @@ module.exports = function(grunt) {
     var syncConf = grunt.file.readJSON('./.grunt-sync.conf');
     var syncEnabled = syncConf && syncConf.target;
 
-    var testTasks = ['jshint', 'run-phantom'];
+    var testTasks = ['jshint', 'run-phantom-specs'];
 
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.config('watch', {
@@ -35,7 +35,7 @@ module.exports = function(grunt) {
     }
 
     grunt.loadTasks('./grunt-tasks');
-    grunt.config('run-phantom', {
+    grunt.config('run-phantom-specs', {
         src : ["test/spec*.js"],
         debug : true,
         verbose : true
