@@ -36,7 +36,9 @@ module.exports = function(grunt) {
 
     grunt.loadTasks('./grunt-tasks');
     grunt.config('run-phantom', {
-        src : ["test/spec*.js"]
+        src : ["test/spec*.js"],
+        debug : true,
+        verbose : true
     });
 
     grunt.registerTask('lint', 'jshint');

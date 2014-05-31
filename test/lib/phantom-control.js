@@ -1,5 +1,11 @@
 // this file is executed in the scope of PhantomJS
 var webpage = require('webpage');
+var system = require('system');
+
+var bGlobalDebug = system.args.indexOf('--debug') > -1;
+var bGlobalVerbose = system.args.indexOf('--verbose') > -1;
+
+// this is an npm require
 var colors = require('colors');
 
 var br = Array(11).join("-");
@@ -83,8 +89,8 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 
     userConf.phantom = userConf.phantom || {};
     userConf.args = userConf.args || {};
-    var debug = userConf.phantom.debug || false;
-    var bVerbose = userConf.phantom.verbose || false;
+    var bDebug = (userConf.phantom.debug !== undefined) ? userConf.phantom.debug : bGlobalDebug;
+    var bVerbose = (userConf.phantom.verbose !== undefined) ? userConf.phantom.verbose : bGlobalVerbose;
 
     var verbose = {
         log : bVerbose ? function (msg) {
@@ -103,7 +109,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
         var magicString = "ASSERT_FAIL";
         var isAssertFail = msg.indexOf(magicString) >= 0;
 
-        if (debug && !isAssertFail) {
+        if (bDebug && !isAssertFail) {
             var ignore = false;
             if (ignoredErrors) {
                 ignore = ignoredErrors.some(function (ignoredMsg) {

@@ -5,7 +5,6 @@ var phantomUtil = require('./lib/phantom-control.js')
 
 var conf = {
     phantom : {
-        debug : true,
         ignoredErrors : [
             "evaluating 'Array.prototype.forEach.call.bind",
             "Can't find variable: $"

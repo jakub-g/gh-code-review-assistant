@@ -21,7 +21,7 @@ module.exports = function(grunt) {
      * or finishes the grunt task for the last spec.
      * @return {Function} standard node process-exit callback
      **/
-    var getPhantomExitCb = function (specId, allSpecs, done) {
+    var getPhantomExitCb = function (specId, allSpecs, cfg, done) {
         var spawnCb = function (error, result, code) {
             if (error) {
                 ok = false;
@@ -34,7 +34,7 @@ module.exports = function(grunt) {
             if (nextSpecId == allSpecs.length) { // last spec
                 done(ok);
             } else {
-                startSpec (nextSpecId, allSpecs, done);
+                startSpec (nextSpecId, allSpecs, cfg, done);
             }
         };
         return spawnCb;
@@ -44,12 +44,20 @@ module.exports = function(grunt) {
      * Boots phantomjs executable with `specPath` as a param, and executes
      * given callback `cb` when phantom process exits.
      * @param {String} specPath
+     * @param {Object} cfg
      * @param {Function} cb
      */
-    function startPhantom (specPath, cb) {
+    function startPhantom (specPath, cfg, cb) {
+        var args = [specPath];
+        if (cfg.verbose) {
+            args.push("--verbose");
+        }
+        if (cfg.debug) {
+            args.push("--debug");
+        }
         var phantomProcess = grunt.util.spawn({
             cmd : 'phantomjs',
-            args : [specPath]
+            args : args
         }, cb);
 
         phantomProcess.stdout.pipe(process.stdout);
@@ -57,7 +65,7 @@ module.exports = function(grunt) {
         return phantomProcess;
     }
 
-    function startSpec (n, allSpecs, done) {
+    function startSpec (n, allSpecs, cfg, done) {
         var printId = n+1;
         var nSpecs = allSpecs.length;
         var msg = "Running spec file " + allSpecs[n] + " [" + printId + "/" + nSpecs + "]";
@@ -66,20 +74,21 @@ module.exports = function(grunt) {
         console.log("\n" + bar.cyan);
         console.log(alignCenter(msg).cyan);
         console.log(bar.cyan + "\n");
-        startPhantom(allSpecs[n], getPhantomExitCb(n, allSpecs, done));
+        startPhantom(allSpecs[n], cfg, getPhantomExitCb(n, allSpecs, cfg, done));
     }
-
 
     grunt.task.registerTask('run-phantom', function () {
         grunt.config.requires('run-phantom');
         grunt.config.requires('run-phantom.src');
-        var specs = grunt.config.get('run-phantom');
-        var allSpecs = grunt.file.expand(specs.src);
+        var cfg = grunt.config.get('run-phantom');
+        var allSpecs = grunt.file.expand(cfg.src);
         if (allSpecs.length == 0) {
             grunt.fail.fatal('No matching specs found by expanding ' + specs.src);
             return;
         }
+        cfg.debug = !!cfg.debug || false;
+        cfg.verbose = !!cfg.verbose || false;
         var done = this.async();
-        startSpec(0, allSpecs, done);
+        startSpec(0, allSpecs, cfg, done);
     });
 };
