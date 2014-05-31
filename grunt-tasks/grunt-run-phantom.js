@@ -1,13 +1,7 @@
 module.exports = function(grunt) {
     grunt.task.registerTask('run-phantom', function () {
         var done = this.async();
-        var child = grunt.util.spawn({
-            cmd : 'node',
-            args : ['./test/lib/run-phantom.js'],
-            opts : {
-                stdio : 'inherit'
-            }
-        }, function (error, result, code) {
+        var spawnCb = function (error, result, code) {
             if (error) {
                 if (code != 99) {
                     console.log(error);
@@ -15,6 +9,13 @@ module.exports = function(grunt) {
                 }
             }
             done(error);
-        });
+        };
+        var phantomProcess = grunt.util.spawn({
+            cmd : 'phantomjs',
+            args : ['./test/spec1.js']
+        }, spawnCb);
+
+        phantomProcess.stdout.pipe(process.stdout);
+        phantomProcess.stderr.pipe(process.stderr);
     });
 };
