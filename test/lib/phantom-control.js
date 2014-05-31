@@ -125,16 +125,16 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 
     var _this = this;
     page.open(url, function (status) {
-        console.log("\nInitializing the test:");
-        console.log("* Page loaded with status " + status);
-        //console.log("* URL: " + url.yellow + " loaded with status " + status);
+        console.log("\n Initializing the test:");
+        console.log(" * Page loaded with status " + status);
+        //console.log(" * URL: " + url.yellow + " loaded with status " + status);
 
         var usPaths = _this.userScriptPaths;
         if (!usPaths) {
             throw new Error("phantom-control: userScriptPath is not defined");
         }
         for (var i = 0; i < usPaths.length; i++) {
-            console.log("* Injecting the userscript... (" + usPaths[i] + ")");
+            console.log(" * Injecting the userscript... (" + usPaths[i] + ")");
             var injected = page.injectJs(usPaths[i]);
             // console.log("  " + (injected ? "OK" : "FAILED"));
             if (!injected) {
@@ -142,10 +142,10 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
             }
         }
 
-        console.log("* Injecting the unit test utils... ");
+        console.log(" * Injecting the unit test utils... ");
         page.evaluate(scopedInBrowser.defineXUnit);
 
-        console.log("* Starting the tests... \n");
+        console.log(" * Starting the tests... \n");
         gatherAndRunTests(getTestRunner(page, userConf));
         // console.log("\n* Tests finished.");
 
@@ -235,7 +235,13 @@ module.exports = {
                 that.startSuite(nextSuiteId);
             } else {
                 var hasError = that._exitCodes.indexOf(99) > -1;
-                console.log("All suites finished" + (hasError ? ", there were some failures." : " OK"));
+                var msg = "All suites finished; ";
+                if (hasError) {
+                    msg = (msg + "there were some failures.").red;
+                } else {
+                    msg = (msg + "OK").green;
+                }
+                console.log(msg);
                 phantom.exit(hasError ? 99 : 0);
             }
         };
