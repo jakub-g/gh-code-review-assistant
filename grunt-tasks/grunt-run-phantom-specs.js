@@ -1,4 +1,3 @@
-
 /**
  * Tracks status of the specs; if any spec fails (i.e. phantom exits with error),
  * then this becomes false.
@@ -28,10 +27,12 @@ module.exports = function(grunt) {
      * or finishes the grunt task for the last spec.
      * @return {Function} standard node process-exit callback
      **/
-    var getPhantomExitCb = function (specId, allSpecs, cfg, done) {
+    function getPhantomExitCb (specId, allSpecs, cfg, done) {
         var spawnCb = function (error, result, code) {
             if (error) {
                 ok = false;
+                // code 99 is a custom code which signifies the error
+                // was already handled by phantom control script
                 if (code != 99) {
                     console.log(error);
                     console.log(code);
@@ -57,10 +58,10 @@ module.exports = function(grunt) {
     function startPhantom (specPath, cfg, cb) {
         var args = [specPath];
         if (cfg.verbose) {
-            args.push("--verbose");
+            args.push("--verbose"); // custom, to be handled by spec runner
         }
         if (cfg.debug) {
-            args.push("--debug");
+            args.push("--debug"); // custom, to be handled by spec runner
         }
         var phantomProcess = grunt.util.spawn({
             cmd : 'phantomjs',
@@ -72,6 +73,9 @@ module.exports = function(grunt) {
         return phantomProcess;
     }
 
+    /**
+     * Prints some info and relays config to start the n-th spec
+     */
     function startSpec (n, allSpecs, cfg, done) {
         var printId = n+1;
         var nSpecs = allSpecs.length;
