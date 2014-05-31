@@ -84,6 +84,13 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
     userConf.phantom = userConf.phantom || {};
     userConf.args = userConf.args || {};
     var debug = userConf.phantom.debug || false;
+    var bVerbose = userConf.phantom.verbose || false;
+
+    var verbose = {
+        log : bVerbose ? function (msg) {
+            console.log(msg);
+        } : function () {}
+    };
     var ignoredErrors = userConf.phantom.ignoredErrors || null;
 
     var page = webpage.create();
@@ -125,29 +132,29 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 
     var _this = this;
     page.open(url, function (status) {
-        console.log("\n Initializing the test:");
-        console.log(" * Page loaded with status " + status);
-        //console.log(" * URL: " + url.yellow + " loaded with status " + status);
+        verbose.log(" Initializing the test:");
+        verbose.log(" * Page loaded with status " + status);
+        //verbose.log(" * URL: " + url.yellow + " loaded with status " + status);
 
         var usPaths = _this.userScriptPaths;
         if (!usPaths) {
             throw new Error("phantom-control: userScriptPath is not defined");
         }
         for (var i = 0; i < usPaths.length; i++) {
-            console.log(" * Injecting the userscript... (" + usPaths[i] + ")");
+            verbose.log(" * Injecting the userscript... (" + usPaths[i] + ")");
             var injected = page.injectJs(usPaths[i]);
-            // console.log("  " + (injected ? "OK" : "FAILED"));
+            // verbose.log("  " + (injected ? "OK" : "FAILED"));
             if (!injected) {
                 throw new Error("Can't inject userscript in the page...");
             }
         }
 
-        console.log(" * Injecting the unit test utils... ");
+        verbose.log(" * Injecting the unit test utils... ");
         page.evaluate(scopedInBrowser.defineXUnit);
 
-        console.log(" * Starting the tests... \n");
+        verbose.log(" * Starting the tests... \n");
         gatherAndRunTests(getTestRunner(page, userConf));
-        // console.log("\n* Tests finished.");
+        // verbose.log("\n* Tests finished.");
 
         onTestSuiteFinished(page, {
             id : suiteId,
@@ -162,7 +169,7 @@ function onTestSuiteFinished (page, suite, done) {
     });
     var hasFailures = asserts._badAsserts > 0;
 
-    var msg = "\n  Test suite " + (suite.id + 1) + " out of " + suite.count + " finished: ";
+    var msg = "\n  Test suite " + (suite.id + 1) + "/" + suite.count + " finished: ";
     msg += (asserts._goodAsserts + " asserts OK").green.bold;
     if (hasFailures) {
         msg += "; " + (asserts._badAsserts + " asserts KO").red.bold;
@@ -250,7 +257,7 @@ module.exports = {
         var nSuites = this.registeredSuites.length;
         var args = this.registeredSuites[n];
         var url = args[0];
-        console.log("Starting test suite " + (n+1) + " out of " + nSuites + ": " + url.yellow);
+        console.log("Starting test suite " + (n+1) + "/" + nSuites + ": " + url.yellow + "\n");
         args.push(n, this._getSuiteDoneCb(n));
         this.openAndTest.apply(this, args);
     },
