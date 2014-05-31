@@ -174,8 +174,7 @@ function onTestSuiteFinished (page, suite, done) {
     if (hasFailures) {
         msg += "; " + (asserts._badAsserts + " asserts KO").red.bold;
     }
-    console.log(msg);
-    console.log("\n" + br + "\n");
+    console.log(msg + "\n");
 
     done(hasFailures ? 99 : 0);
 }
@@ -257,6 +256,9 @@ module.exports = {
         var nSuites = this.registeredSuites.length;
         var args = this.registeredSuites[n];
         var url = args[0];
+        if (n > 0) {
+            console.log(br + "\n");
+        }
         console.log("Starting test suite " + (n+1) + "/" + nSuites + ": " + url.yellow + "\n");
         args.push(n, this._getSuiteDoneCb(n));
         this.openAndTest.apply(this, args);
