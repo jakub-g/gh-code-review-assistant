@@ -2,7 +2,7 @@
 var webpage = require('webpage');
 var colors = require('colors');
 
-var br = Array(101).join("-");
+var br = Array(11).join("-");
 
 var scopedInBrowser = {
     defineXUnit : function () {
@@ -168,7 +168,7 @@ function onTestSuiteFinished (page, suite, done) {
         msg += "; " + (asserts._badAsserts + " asserts KO").red.bold;
     }
     console.log(msg);
-    console.log(br + "\n");
+    console.log("\n" + br + "\n");
 
     done(hasFailures ? 99 : 0);
 }
@@ -260,7 +260,7 @@ module.exports = {
      */
     start : function () {
         if (this.registeredSuites.length > 0) {
-            console.log(br);
+            //console.log(br);
             this.startSuite(0);
         } else {
             console.error("No suites registered!");

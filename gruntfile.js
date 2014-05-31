@@ -35,6 +35,9 @@ module.exports = function(grunt) {
     }
 
     grunt.loadTasks('./grunt-tasks');
+    grunt.config('run-phantom', {
+        src : ["test/spec*.js"]
+    });
 
     grunt.registerTask('lint', 'jshint');
     grunt.registerTask('sync', 'copy');
