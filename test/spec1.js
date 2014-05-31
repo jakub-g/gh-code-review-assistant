@@ -9,22 +9,22 @@ var CONF = {
 
 //phantomUtil.evalInPageScope
 phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", CONF, function (test) {
-    test('should have the button to open config', function () {
+    test('has the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
     });
 
-    test('should have buttons to wipe storage', function () {
+    test('has buttons to wipe storage', function () {
         assert.inDom('#ghaWipeCommitOrUrl');
         assert.inDom('#ghaWipeRepo');
         assert.inDom('#ghaWipeAll');
     });
 
-    test('should count number of files properly', function (CONF) {
+    test('counts number of files properly', function (CONF) {
         var expectedFiles = CONF.filesOnPage;
         assert.eq(gha.DomReader.getNumberOfFiles(), expectedFiles);
     });
 
-    test('should inject fail/ok buttons proper nb. of times', function (CONF) {
+    test('injects fail/ok buttons proper nb. of times', function (CONF) {
         assert.inDom('.ghaToggleFileState', CONF.filesOnPage * 2);
         assert.inDom('.ghaToggleFileStateFail', CONF.filesOnPage);
         assert.inDom('.ghaToggleFileStateOk', CONF.filesOnPage);
@@ -77,6 +77,9 @@ phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", C
         helpers.click(BUT); // expanding all 3
         assert.len(getVisible(filesBodies), 3);
         assert.eq(BUT.innerHTML, L10N.collapseAll);
+
+        helpers.click(BUT); // collapsing all
+        assert.len(getVisible(filesBodies), 0);
 
         toggleLastElem(); // reset
     });
