@@ -1,13 +1,18 @@
 // this file is executed in the scope of PhantomJS
+// PhantomJS requires
 var webpage = require('webpage');
 var system = require('system');
+
+// local requires
+var xunit = require('./xunit');
+
+// this is an npm require
+var colors = require('colors');
 
 var bGlobalColor = system.args.indexOf('--color') > -1;
 var bGlobalDebug = system.args.indexOf('--debug') > -1;
 var bGlobalVerbose = system.args.indexOf('--verbose') > -1;
 
-// this is an npm require
-var colors = require('colors');
 if (!bGlobalColor) {
     colors.mode = "none";
 }
@@ -15,42 +20,7 @@ if (!bGlobalColor) {
 var br = Array(11).join("-");
 
 var scopedInBrowser = {
-    defineXUnit : function () {
-        window.assert = {
-            _goodAsserts: 0,
-            _badAsserts: 0,
-            eq : function (a1, a2, optMsg) {
-                optMsg = optMsg || "";
-                if (a1 !== a2) {
-                    this._badAsserts++;
-                    throw new Error("ASSERT_FAIL: " + optMsg + "\n expected " + a1 + " to equal " + a2);
-                }
-                this._goodAsserts++;
-            },
-            len : function (item, len, optMsg) {
-                optMsg = optMsg || "";
-                if (item.length != len) {
-                    this._badAsserts++;
-                    throw new Error("ASSERT_FAIL: " + optMsg + "\n-->expected item's length to equal " + len + " but it is " + item.length);
-                }
-                this._goodAsserts++;
-            },
-            inDom : function (selector, times) {
-                var expected = (times === undefined ?  1 : times);
-                var actual = document.querySelectorAll(selector).length;
-
-                var msg = "Expected to find " + expected + " nodes matching '" + selector + "'" + " but found " + actual;
-                this.eq(expected, actual, msg);
-            },
-            helpers : {
-                click : function (elem) {
-                    var evt = document.createEvent("HTMLEvents");
-                    evt.initEvent("click", true, true);
-                    elem.dispatchEvent(evt);
-                }
-            }
-        };
-    },
+    defineXUnit : xunit,
 
     wrapWithTryCatch : function (userConf) {
         // it's done this strange way due to how page.evaluate works
