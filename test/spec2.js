@@ -16,7 +16,6 @@ phantomTester.setTestArgs({
     filesOnPage : 3
 });
 
-//phantomTester.evalInPageScope
 phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", function (test) {
     test('has the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
