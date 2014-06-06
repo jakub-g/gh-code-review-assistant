@@ -1,5 +1,5 @@
 // this file is executed in the scope of PhantomJS
-var phantomUtil = require('./lib/phantom-control.js')
+var phantomTester = require('./lib/phantom-tester.js')
     .userScript("./polyfills/Function.bind.js")
     .userScript("../ghAssistant.user.js");
 
@@ -15,8 +15,8 @@ var conf = {
     }
 };
 
-//phantomUtil.evalInPageScope
-phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
+//phantomTester.evalInPageScope
+phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
     test('has the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
     });
@@ -95,7 +95,7 @@ phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", c
     test.start();
 });
 
-phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
+phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
 
     test('toggle fail button changes files style', function () {
         var helpers = assert.helpers;
@@ -126,4 +126,4 @@ phantomUtil.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", c
     test.start();
 });
 
-phantomUtil.start();
+phantomTester.start();

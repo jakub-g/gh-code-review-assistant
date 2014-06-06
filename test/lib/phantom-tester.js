@@ -140,7 +140,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 
         var usPaths = _this.userScriptPaths;
         if (!usPaths) {
-            throw new Error("phantom-control: userScriptPath is not defined");
+            throw new Error("phantom-tester: userScriptPath is not defined");
         }
         for (var i = 0; i < usPaths.length; i++) {
             verbose.log(" * Injecting the userscript... (" + usPaths[i] + ")");
