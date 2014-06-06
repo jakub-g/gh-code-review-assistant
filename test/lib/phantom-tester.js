@@ -138,7 +138,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
         verbose.log(" * Page loaded with status " + status);
         //verbose.log(" * URL: " + url.yellow + " loaded with status " + status);
 
-        var usPaths = _this.userScriptPaths;
+        var usPaths = _this._userScriptPaths;
         if (!usPaths) {
             throw new Error("phantom-tester: userScriptPath is not defined");
         }
@@ -160,7 +160,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 
         onTestSuiteFinished(page, {
             id : suiteId,
-            count : _this.registeredSuites.length
+            count : _this._registeredSuites.length
         }, done);
     });
 }
@@ -184,7 +184,7 @@ function onTestSuiteFinished (page, suite, done) {
 var br = Array(11).join("-");
 module.exports = {
     /**
-     * Opens `url` in Phantom, injects `this.userScriptPaths` userscripts, and calls test function `gatherTest`
+     * Opens `url` in Phantom, injects `this._userScriptPaths` userscripts, and calls test function `gatherTest`
      * with one argument `test`. Usage:
      * <pre>
      *   phantomUtil.openAndTest("http://example.com/", function (test) {
@@ -202,17 +202,17 @@ module.exports = {
      * @param {String} url
      * @param {Function} gatherTest
      */
-    openAndTest : openAndTest,
+    _openAndTest : openAndTest,
 
     /**
      * Sets internal cfg variable `this.userScriptPath` as provided, and returns `this` for chaining.
      * @param {String} userScriptPath
      */
     userScript : function (userScriptPath) {
-        this.userScriptPaths.push(userScriptPath);
+        this._userScriptPaths.push(userScriptPath);
         return this;
     },
-    userScriptPaths : [],
+    _userScriptPaths : [],
 
     /**
      * Registers a suite to be executed via `openAndTest`. Params expected are same
@@ -220,9 +220,9 @@ module.exports = {
      * @see openAndTest
      */
     registerSuite : function (/*args*/) {
-        this.registeredSuites.push([].slice.call(arguments, 0));
+        this._registeredSuites.push([].slice.call(arguments, 0));
     },
-    registeredSuites : [],
+    _registeredSuites : [],
     _exitCodes : [],
 
     /**
@@ -234,14 +234,14 @@ module.exports = {
      */
     _getSuiteDoneCb : function (n) {
         var that = this;
-        var nSuites = this.registeredSuites.length;
+        var nSuites = this._registeredSuites.length;
         return function (exitCode) {
             // printing in 1-based values for user-friendliness
             // console.log("Test suite " + (n+1) + " finished with code " + exitCode);
             that._exitCodes.push(exitCode);
             var nextSuiteId = n+1;
             if (nextSuiteId < nSuites) {
-                that.startSuite(nextSuiteId);
+                that._startSuite(nextSuiteId);
             } else {
                 var hasError = that._exitCodes.indexOf(99) > -1;
                 var msg = "All suites finished; ";
@@ -255,25 +255,25 @@ module.exports = {
             }
         };
     },
-    startSuite : function (n) {
-        var nSuites = this.registeredSuites.length;
-        var args = this.registeredSuites[n];
+    _startSuite : function (n) {
+        var nSuites = this._registeredSuites.length;
+        var args = this._registeredSuites[n];
         var url = args[0];
         if (n > 0) {
             console.log(br + "\n");
         }
         console.log("Starting test suite " + (n+1) + "/" + nSuites + ": " + url.yellow + "\n");
         args.push(n, this._getSuiteDoneCb(n));
-        this.openAndTest.apply(this, args);
+        this._openAndTest.apply(this, args);
     },
 
     /**
      * Main entry point - starts the first suite to be executed.
      */
     start : function () {
-        if (this.registeredSuites.length > 0) {
+        if (this._registeredSuites.length > 0) {
             //console.log(br);
-            this.startSuite(0);
+            this._startSuite(0);
         } else {
             console.error("No suites registered!");
             phantom.exit(98);
