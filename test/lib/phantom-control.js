@@ -9,19 +9,12 @@ var xunit = require('./xunit');
 // this is an npm require
 var colors = require('colors');
 
-var bGlobalColor = system.args.indexOf('--color') > -1;
-var bGlobalDebug = system.args.indexOf('--debug') > -1;
-var bGlobalVerbose = system.args.indexOf('--verbose') > -1;
+// ============================================================================
 
-if (!bGlobalColor) {
-    colors.mode = "none";
-}
-
-var br = Array(11).join("-");
+var CFG = parseCommandLineCfg();
 
 var scopedInBrowser = {
     defineXUnit : xunit,
-
     wrapWithTryCatch : function (userConf) {
         // it's done this strange way due to how page.evaluate works
         // it wouldn't see the closure variables, hence the fn to be wrapped
@@ -37,6 +30,35 @@ var scopedInBrowser = {
         };
     }
 };
+
+function parseCommandLineCfg () {
+    var aCmdArgs = system.args;
+    var bGlobalColor = aCmdArgs.indexOf('--color') > -1;
+    var bGlobalDebug = aCmdArgs.indexOf('--debug') > -1;
+    var bGlobalVerbose = aCmdArgs.indexOf('--verbose') > -1;
+
+    var sAssertVarName;
+    aCmdArgs.forEach(function (arg) {
+        var match = arg.match(/\-\-assertName=(.+)/);
+        if (match) {
+            sAssertVarName = match[1];
+        }
+    });
+
+    if (!bGlobalColor) {
+        colors.mode = "none";
+    }
+
+    if (bGlobalDebug) {
+        console.log("PhantomJS command line args : " + aCmdArgs.join(" "));
+    }
+    return {
+        color : bGlobalColor,
+        debug : bGlobalDebug,
+        verbose : bGlobalVerbose,
+        assertName : sAssertVarName || "assert"
+    };
+}
 
 function getTestRunner (page, userConf) {
     var pendingTests = [];
@@ -63,8 +85,8 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 
     userConf.phantom = userConf.phantom || {};
     userConf.args = userConf.args || {};
-    var bDebug = (userConf.phantom.debug !== undefined) ? userConf.phantom.debug : bGlobalDebug;
-    var bVerbose = (userConf.phantom.verbose !== undefined) ? userConf.phantom.verbose : bGlobalVerbose;
+    var bDebug = (userConf.phantom.debug !== undefined) ? userConf.phantom.debug : CFG.debug;
+    var bVerbose = (userConf.phantom.verbose !== undefined) ? userConf.phantom.verbose : CFG.verbose;
 
     var verbose = {
         log : bVerbose ? function (msg) {
@@ -130,7 +152,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
         }
 
         verbose.log(" * Injecting the unit test utils... ");
-        page.evaluate(scopedInBrowser.defineXUnit);
+        page.evaluate(scopedInBrowser.defineXUnit, CFG.assertName);
 
         verbose.log(" * Starting the tests... \n");
         gatherAndRunTests(getTestRunner(page, userConf));
@@ -144,9 +166,9 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
 }
 
 function onTestSuiteFinished (page, suite, done) {
-    var asserts = page.evaluate(function () {
-        return window.assert;
-    });
+    var asserts = page.evaluate(function (assertVarName) {
+        return window[assertVarName];
+    }, CFG.assertName);
     var hasFailures = asserts._badAsserts > 0;
 
     var msg = "\n  Test suite " + (suite.id + 1) + "/" + suite.count + " finished: ";
@@ -159,6 +181,7 @@ function onTestSuiteFinished (page, suite, done) {
     done(hasFailures ? 99 : 0);
 }
 
+var br = Array(11).join("-");
 module.exports = {
     /**
      * Opens `url` in Phantom, injects `this.userScriptPaths` userscripts, and calls test function `gatherTest`

@@ -85,6 +85,7 @@ module.exports = function (grunt) {
         if (cfg.color) {
             args.push("--color"); // custom, to be handled by spec runner
         }
+        args.push("--assertName=" + cfg.assertName);
         var phantomProcess = grunt.util.spawn({
             cmd : 'phantomjs',
             args : args
@@ -120,12 +121,20 @@ module.exports = function (grunt) {
     /**
      * Runs, sequentially, spec files found on disk matching the expanded `src` value.
      *
+     * Passes the "debug", "verbose", "color" opts as command line flags ("--debug" etc.)
+     * to PhantomJS executable for consideration by the the Phantom control script.
+     *
+     * "assertName" opt tells Phantom control script under what global variable it should
+     * make available the XUnit object.
+     *
      * Sample config:
      * <pre>
      *    grunt.config('run-phantom-specs', {
      *      src : ["test/spec*.js"],
-     *      debug : true,  // will be passed to PhantomJS control script as --debug
-     *      verbose : true // will be passed to PhantomJS control script as --verbose
+     *      debug : true,                   // default false
+     *      verbose : true                  // default false
+     *      color: process.stdout.isTTY     // default false
+     *      assertName : "assert"           // default "assert"
      *    });
      * </pre>
      */
@@ -138,12 +147,16 @@ module.exports = function (grunt) {
             grunt.fail.fatal('No matching specs found by expanding ' + specs.src);
             return;
         }
+
+        // normalize config
+        cfg.assertName = cfg.assertName || "assert";
+        cfg.debug = !!cfg.debug;
+        cfg.verbose = !!cfg.verbose;
         cfg.color = !!cfg.color;
         if (!cfg.color) {
             noColors();
         }
-        cfg.debug = !!cfg.debug;
-        cfg.verbose = !!cfg.verbose;
+
         var done = this.async();
         startSpec(0, allSpecs, cfg, done);
     });

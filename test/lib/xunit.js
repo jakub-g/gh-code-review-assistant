@@ -2,7 +2,8 @@
  * This function is scoped in web browser, when executed it defines
  * an assertion library in window's global scope.
  * @param {String} varName Under which name in global scope the lib
- * will be available (i.e. window[varName]).
+ * will be available (i.e. window[varName]), if you want to avoid conflicts
+ * with the page's global objects.
  */
 module.exports = function (varName) {
     varName = varName || "assert";
