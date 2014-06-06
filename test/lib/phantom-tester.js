@@ -42,11 +42,19 @@ function parseCommandLineCfg () {
     };
 }
 
+/**
+ * Returns a new function `test` that is test gatherer and runner in one.
+ * The returned function can be called like this: `test("My test name", function (args) { }`
+ * and this will add a new test to the queue.
+ *
+ * To start the execution of all tests in queue, one should call `test.start()`.
+ * @return {Function}
+ */
 function getTestRunner (page, testArgs) {
     var pendingTests = [];
-    var testRunner = function (message, testFn) {
+    var testRunner = function (testName, testFn) {
         pendingTests.push({
-            message : message,
+            testName : testName,
             testFn : testFn
         });
     };
@@ -57,7 +65,7 @@ function getTestRunner (page, testArgs) {
             var testFn = client.wrapWithTryCatch();
             var ok = page.evaluate(testFn, test.testFn, testArgs);
 
-            console.log( (ok ? (" [ OK ] ".green.bold) : (" [FAIL] ".red.bold)) + test.message);
+            console.log( (ok ? (" [ OK ] ".green.bold) : (" [FAIL] ".red.bold)) + test.testName);
         }
     };
     return testRunner;
