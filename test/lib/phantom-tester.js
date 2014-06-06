@@ -42,7 +42,7 @@ function parseCommandLineCfg () {
     };
 }
 
-function getTestRunner (page, userConf) {
+function getTestRunner (page, testArgs) {
     var pendingTests = [];
     var testRunner = function (message, testFn) {
         pendingTests.push({
@@ -55,7 +55,7 @@ function getTestRunner (page, userConf) {
         while (pendingTests.length > 0) {
             var test = pendingTests.shift();
             var testFn = client.wrapWithTryCatch();
-            var ok = page.evaluate(testFn, test.testFn, userConf.args);
+            var ok = page.evaluate(testFn, test.testFn, testArgs);
 
             console.log( (ok ? (" [ OK ] ".green.bold) : (" [FAIL] ".red.bold)) + test.message);
         }
@@ -63,12 +63,14 @@ function getTestRunner (page, userConf) {
     return testRunner;
 }
 
-function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
+function openAndTest(url, gatherAndRunTests, suiteId, done) {
 
+    var userConf = this._config;
     userConf.phantom = userConf.phantom || {};
-    userConf.args = userConf.args || {};
     var bDebug = (userConf.phantom.debug !== undefined) ? userConf.phantom.debug : CFG.debug;
     var bVerbose = (userConf.phantom.verbose !== undefined) ? userConf.phantom.verbose : CFG.verbose;
+
+    var testArgs = this._testArgs || {};
 
     var verbose = {
         log : bVerbose ? function (msg) {
@@ -137,7 +139,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
         page.evaluate(client.xunit, CFG.assertName);
 
         verbose.log(" * Starting the tests... \n");
-        gatherAndRunTests(getTestRunner(page, userConf));
+        gatherAndRunTests(getTestRunner(page, testArgs));
         // verbose.log("\n* Tests finished.");
 
         onTestSuiteFinished(page, {
@@ -175,6 +177,14 @@ module.exports = {
         return this;
     },
 
+    setConfig : function (cfgObj) {
+        this._config = cfgObj;
+    },
+
+    setTestArgs : function (args) {
+        this._testArgs = args;
+    },
+
     /**
      * Registers a suite to be executed via `openAndTest`. Params expected are same
      * as for `openAndTest`.
@@ -197,6 +207,8 @@ module.exports = {
         }
     },
 
+    _config : {},
+    _testArgs : {},
     _userScriptPaths : [],
     _registeredSuites : [],
     _exitCodes : [],

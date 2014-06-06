@@ -3,20 +3,21 @@ var phantomTester = require('./lib/phantom-tester.js')
     .userScript("./polyfills/Function.bind.js")
     .userScript("../ghAssistant.user.js");
 
-var conf = {
+phantomTester.setConfig({
     phantom : {
         ignoredErrors : [
             "evaluating 'Array.prototype.forEach.call.bind",
             "Can't find variable: $"
         ]
-    },
-    args : {
-        filesOnPage : 3
     }
-};
+});
 
-//phantomUtil.evalInPageScope
-phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", conf, function (test) {
+phantomTester.setTestArgs({
+    filesOnPage : 3
+});
+
+//phantomTester.evalInPageScope
+phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", function (test) {
     test('has the button to open config', function () {
         assert.inDom('.ghaCfgOpenButton');
     });
