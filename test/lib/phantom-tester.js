@@ -183,6 +183,42 @@ function onTestSuiteFinished (page, suite, done) {
 
 var br = Array(11).join("-");
 module.exports = {
+
+    /**
+     * Sets internal cfg variable `this.userScriptPath` as provided, and returns `this` for chaining.
+     * @param {String} userScriptPath
+     */
+    userScript : function (userScriptPath) {
+        this._userScriptPaths.push(userScriptPath);
+        return this;
+    },
+
+    /**
+     * Registers a suite to be executed via `openAndTest`. Params expected are same
+     * as for `openAndTest`.
+     * @see openAndTest
+     */
+    registerSuite : function (/*args*/) {
+        this._registeredSuites.push([].slice.call(arguments, 0));
+    },
+
+    /**
+     * Main entry point - starts the first suite to be executed.
+     */
+    start : function () {
+        if (this._registeredSuites.length > 0) {
+            //console.log(br);
+            this._startSuite(0);
+        } else {
+            console.error("No suites registered!");
+            phantom.exit(98);
+        }
+    },
+
+    _userScriptPaths : [],
+    _registeredSuites : [],
+    _exitCodes : [],
+
     /**
      * Opens `url` in Phantom, injects `this._userScriptPaths` userscripts, and calls test function `gatherTest`
      * with one argument `test`. Usage:
@@ -204,26 +240,17 @@ module.exports = {
      */
     _openAndTest : openAndTest,
 
-    /**
-     * Sets internal cfg variable `this.userScriptPath` as provided, and returns `this` for chaining.
-     * @param {String} userScriptPath
-     */
-    userScript : function (userScriptPath) {
-        this._userScriptPaths.push(userScriptPath);
-        return this;
+    _startSuite : function (n) {
+        var nSuites = this._registeredSuites.length;
+        var args = this._registeredSuites[n];
+        var url = args[0];
+        if (n > 0) {
+            console.log(br + "\n");
+        }
+        console.log("Starting test suite " + (n+1) + "/" + nSuites + ": " + url.yellow + "\n");
+        args.push(n, this._getSuiteDoneCb(n));
+        this._openAndTest.apply(this, args);
     },
-    _userScriptPaths : [],
-
-    /**
-     * Registers a suite to be executed via `openAndTest`. Params expected are same
-     * as for `openAndTest`.
-     * @see openAndTest
-     */
-    registerSuite : function (/*args*/) {
-        this._registeredSuites.push([].slice.call(arguments, 0));
-    },
-    _registeredSuites : [],
-    _exitCodes : [],
 
     /**
      * Returns a callback function that will be called upon finishing of suite n.
@@ -254,30 +281,6 @@ module.exports = {
                 phantom.exit(hasError ? 99 : 0);
             }
         };
-    },
-    _startSuite : function (n) {
-        var nSuites = this._registeredSuites.length;
-        var args = this._registeredSuites[n];
-        var url = args[0];
-        if (n > 0) {
-            console.log(br + "\n");
-        }
-        console.log("Starting test suite " + (n+1) + "/" + nSuites + ": " + url.yellow + "\n");
-        args.push(n, this._getSuiteDoneCb(n));
-        this._openAndTest.apply(this, args);
-    },
-
-    /**
-     * Main entry point - starts the first suite to be executed.
-     */
-    start : function () {
-        if (this._registeredSuites.length > 0) {
-            //console.log(br);
-            this._startSuite(0);
-        } else {
-            console.error("No suites registered!");
-            phantom.exit(98);
-        }
     },
 
 };
