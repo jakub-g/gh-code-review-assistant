@@ -38,7 +38,8 @@ module.exports = function(grunt) {
     grunt.config('run-phantom-specs', {
         src : ["test/spec*.js"],
         debug : true,
-        verbose : true
+        verbose : true,
+        color : process.stdout.isTTY
     });
 
     grunt.registerTask('lint', 'jshint');

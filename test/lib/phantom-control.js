@@ -2,11 +2,15 @@
 var webpage = require('webpage');
 var system = require('system');
 
+var bGlobalColor = system.args.indexOf('--color') > -1;
 var bGlobalDebug = system.args.indexOf('--debug') > -1;
 var bGlobalVerbose = system.args.indexOf('--verbose') > -1;
 
 // this is an npm require
 var colors = require('colors');
+if (!bGlobalColor) {
+    colors.mode = "none";
+}
 
 var br = Array(11).join("-");
 

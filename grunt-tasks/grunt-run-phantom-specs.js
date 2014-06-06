@@ -1,5 +1,5 @@
 /**
- * Tracks status of the specs; if any spec fails (i.e. phantom exits with error),
+ * Tracks status of the specs; if any spec fails (i.e. phantom exits with error because some suite failed),
  * then this becomes false.
  **/
 var ok = true;
@@ -9,7 +9,7 @@ var ok = true;
  * @param {String} msg
  * @return {String}
  **/
-function alignCenter(msg) {
+function alignCenter (msg) {
     var cols = process.stdout.columns;
     var len = msg.length;
 
@@ -20,7 +20,29 @@ function alignCenter(msg) {
     return msg;
 }
 
-module.exports = function(grunt) {
+/**
+ * Disables colored output for this module when called.
+ */
+function noColors () {
+    String.prototype.cyan = function () {
+        return this.toString();
+    };
+}
+
+/**
+ * This module provides a generic lighweight task 'run-phantom-specs' which reads
+ * from config a list of "spec files" to execute, and then executes them one by one.
+ * <br>
+ * A "spec file" is understood as a standalone "PhantomJS control script".<br>
+ * A failure is understood as PhantomJS exiting with code != 0.<br>
+ * <br>
+ * The value brought by this module are:
+ * - simple interface
+ * - error handling
+ * - logging
+ * - Grunt workflow compat (fail grunt if any test fails).
+ */
+module.exports = function (grunt) {
 
     /**
      * Factory of phantom exit callbacks. Created callback for n-th spec runs the n+1-st spec,
@@ -31,11 +53,8 @@ module.exports = function(grunt) {
         var spawnCb = function (error, result, code) {
             if (error) {
                 ok = false;
-                // code 99 is a custom code which signifies the error
-                // was already handled by phantom control script
-                if (code != 99) {
-                    console.log(error);
-                    console.log(code);
+                if (cfg.debug) {
+                    console.log("PhantomJS exited with code "  + code);
                 }
             }
             var nextSpecId = specId + 1;
@@ -63,6 +82,9 @@ module.exports = function(grunt) {
         if (cfg.debug) {
             args.push("--debug"); // custom, to be handled by spec runner
         }
+        if (cfg.color) {
+            args.push("--color"); // custom, to be handled by spec runner
+        }
         var phantomProcess = grunt.util.spawn({
             cmd : 'phantomjs',
             args : args
@@ -75,20 +97,38 @@ module.exports = function(grunt) {
 
     /**
      * Prints some info and relays config to start the n-th spec
+     * @param {Integer} n
+     * @param {Array} allSpecs
+     * @param {Object} cfg
+     * @param {Function} done
      */
     function startSpec (n, allSpecs, cfg, done) {
-        var printId = n+1;
+        var printId = n + 1;
+        var specPath = allSpecs[n];
         var nSpecs = allSpecs.length;
-        var msg = "Running spec file " + allSpecs[n] + " [" + printId + "/" + nSpecs + "]";
+        var msg = "Running spec file " + specPath + " [" + printId + "/" + nSpecs + "]";
 
         var bar = Array(process.stdout.columns).join("*");
         console.log("\n" + bar.cyan);
         console.log(alignCenter(msg).cyan);
         console.log(bar.cyan + "\n");
 
-        startPhantom(allSpecs[n], cfg, getPhantomExitCb(n, allSpecs, cfg, done));
+        var cb = getPhantomExitCb(n, allSpecs, cfg, done);
+        startPhantom(specPath, cfg, cb);
     }
 
+    /**
+     * Runs, sequentially, spec files found on disk matching the expanded `src` value.
+     *
+     * Sample config:
+     * <pre>
+     *    grunt.config('run-phantom-specs', {
+     *      src : ["test/spec*.js"],
+     *      debug : true,  // will be passed to PhantomJS control script as --debug
+     *      verbose : true // will be passed to PhantomJS control script as --verbose
+     *    });
+     * </pre>
+     */
     grunt.task.registerTask('run-phantom-specs', function () {
         grunt.config.requires('run-phantom-specs');
         grunt.config.requires('run-phantom-specs.src');
@@ -98,8 +138,12 @@ module.exports = function(grunt) {
             grunt.fail.fatal('No matching specs found by expanding ' + specs.src);
             return;
         }
-        cfg.debug = !!cfg.debug || false;
-        cfg.verbose = !!cfg.verbose || false;
+        cfg.color = !!cfg.color;
+        if (!cfg.color) {
+            noColors();
+        }
+        cfg.debug = !!cfg.debug;
+        cfg.verbose = !!cfg.verbose;
         var done = this.async();
         startSpec(0, allSpecs, cfg, done);
     });
