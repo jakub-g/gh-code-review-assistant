@@ -63,7 +63,30 @@ function getTestRunner (page, testArgs) {
     return testRunner;
 }
 
-function openAndTest(url, gatherAndRunTests, suiteId, done) {
+/**
+ * Opens `url` in Phantom, injects `this._userScriptPaths` userscripts, calls test function `gatherTest`
+ * with one argument `test` to gather the tests, then feeds those tests to the test runner,
+ * and starts the test runner.
+ *
+ * Usage:
+ * <pre>
+ *   phantomTester._openAndTest("http://example.com/", function (test) {
+ *      test('should do something', function () {
+ *          assert.eq(1, 1);
+ *      });
+ *
+ *      test('should do something else', function () {
+ *          assert.eq(1, 2);
+ *      });
+ *   });
+ * </pre>
+ * @param {String} url
+ * @param {Function} feedRunnerWithTests The function that will gather tests to execute once run
+ * @param {Integer} suiteId Sequential number of the current suite (for printing)
+ * @param {Function} done Callback to be called on suite finish (it should start
+ * the next suite or exit Phantom once all suites are done)
+ */
+function openAndTest(url, feedRunnerWithTests, suiteId, done) {
 
     var userConf = this._config;
     userConf.phantom = userConf.phantom || {};
@@ -139,7 +162,9 @@ function openAndTest(url, gatherAndRunTests, suiteId, done) {
         page.evaluate(client.xunit, CFG.assertName);
 
         verbose.log(" * Starting the tests... \n");
-        gatherAndRunTests(getTestRunner(page, testArgs));
+        var testRunner = getTestRunner(page, testArgs);
+        feedRunnerWithTests(testRunner);
+        testRunner.start();
         // verbose.log("\n* Tests finished.");
 
         onTestSuiteFinished(page, {
@@ -213,25 +238,6 @@ module.exports = {
     _registeredSuites : [],
     _exitCodes : [],
 
-    /**
-     * Opens `url` in Phantom, injects `this._userScriptPaths` userscripts, and calls test function `gatherTest`
-     * with one argument `test`. Usage:
-     * <pre>
-     *   phantomUtil.openAndTest("http://example.com/", function (test) {
-     *      test('should do something', function () {
-     *          assert.eq(1, 1);
-     *      });
-     *
-     *      test('should do something else', function () {
-     *          assert.eq(1, 2);
-     *      });
-     *
-     *      test.start();
-     *   });
-     * </pre>
-     * @param {String} url
-     * @param {Function} gatherTest
-     */
     _openAndTest : openAndTest,
 
     _startSuite : function (n) {

@@ -91,8 +91,6 @@ phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files",
 
         toggleLastElem(); // reset
     });
-
-    test.start();
 });
 
 phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files", function (test) {

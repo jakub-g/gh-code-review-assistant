@@ -26,7 +26,6 @@ phantomTester.registerSuite("https://github.com/jakub-g/test-repo/pull/1/files",
         assert.inDom('#ghaWipeRepo');
         assert.inDom('#ghaWipeAll');
     });
-    test.start();
 });
 
 phantomTester.start();
