@@ -3,33 +3,15 @@
 var webpage = require('webpage');
 var system = require('system');
 
-// local requires
-var xunit = require('./xunit');
-
 // this is an npm require
 var colors = require('colors');
+
+// local requires
+var client = require('./client');
 
 // ============================================================================
 
 var CFG = parseCommandLineCfg();
-
-var scopedInBrowser = {
-    defineXUnit : xunit,
-    wrapWithTryCatch : function (userConf) {
-        // it's done this strange way due to how page.evaluate works
-        // it wouldn't see the closure variables, hence the fn to be wrapped
-        // is passed as a second param to page.evaluate
-        return function (origFn, userConf) {
-            try {
-                origFn(userConf);
-                return true;
-            } catch (e) {
-                console.log(e);
-                return false;
-            }
-        };
-    }
-};
 
 function parseCommandLineCfg () {
     var aCmdArgs = system.args;
@@ -72,7 +54,7 @@ function getTestRunner (page, userConf) {
     testRunner.start = function () {
         while (pendingTests.length > 0) {
             var test = pendingTests.shift();
-            var testFn = scopedInBrowser.wrapWithTryCatch();
+            var testFn = client.wrapWithTryCatch();
             var ok = page.evaluate(testFn, test.testFn, userConf.args);
 
             console.log( (ok ? (" [ OK ] ".green.bold) : (" [FAIL] ".red.bold)) + test.message);
@@ -152,7 +134,7 @@ function openAndTest(url, userConf, gatherAndRunTests, suiteId, done) {
         }
 
         verbose.log(" * Injecting the unit test utils... ");
-        page.evaluate(scopedInBrowser.defineXUnit, CFG.assertName);
+        page.evaluate(client.xunit, CFG.assertName);
 
         verbose.log(" * Starting the tests... \n");
         gatherAndRunTests(getTestRunner(page, userConf));
