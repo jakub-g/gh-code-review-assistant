@@ -19,11 +19,11 @@ function parseCommandLineCfg () {
     var bGlobalDebug = aCmdArgs.indexOf('--debug') > -1;
     var bGlobalVerbose = aCmdArgs.indexOf('--verbose') > -1;
 
-    var sAssertVarName;
+    var sxunitVarName;
     aCmdArgs.forEach(function (arg) {
-        var match = arg.match(/\-\-assertName=(.+)/);
+        var match = arg.match(/\-\-xunitName=(.+)/);
         if (match) {
-            sAssertVarName = match[1];
+            sxunitVarName = match[1];
         }
     });
 
@@ -38,7 +38,7 @@ function parseCommandLineCfg () {
         color : bGlobalColor,
         debug : bGlobalDebug,
         verbose : bGlobalVerbose,
-        assertName : sAssertVarName || "assert"
+        xunitName : sxunitVarName || "assert"
     };
 }
 
@@ -167,7 +167,12 @@ function openAndTest(url, feedRunnerWithTests, suiteId, done) {
         }
 
         verbose.log(" * Injecting the unit test utils... ");
-        page.evaluate(client.xunit, CFG.assertName);
+        var xunit = _this._xunit;
+        if (xunit) {
+            verbose.log(" * Using user-supplied xunit... ");
+        }
+        xunit = xunit || client.xunit;
+        page.evaluate(xunit, CFG.xunitName);
 
         verbose.log(" * Starting the tests... \n");
         var testRunner = getTestRunner(page, testArgs);
@@ -183,9 +188,9 @@ function openAndTest(url, feedRunnerWithTests, suiteId, done) {
 }
 
 function onTestSuiteFinished (page, suite, done) {
-    var asserts = page.evaluate(function (assertVarName) {
-        return window[assertVarName];
-    }, CFG.assertName);
+    var asserts = page.evaluate(function (xunitVarName) {
+        return window[xunitVarName];
+    }, CFG.xunitName);
     var hasFailures = asserts._badAsserts > 0;
 
     var msg = "\n  Test suite " + (suite.id + 1) + "/" + suite.count + " finished: ";
@@ -218,6 +223,10 @@ module.exports = {
         this._testArgs = args;
     },
 
+    setXUnit : function (xunit) {
+        this._xunit = xunit;
+    },
+
     /**
      * Registers a suite to be executed via `openAndTest`. Params expected are same
      * as for `openAndTest`.
@@ -240,6 +249,7 @@ module.exports = {
         }
     },
 
+    _xunit : null,
     _config : {},
     _testArgs : {},
     _userScriptPaths : [],

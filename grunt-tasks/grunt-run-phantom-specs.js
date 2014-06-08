@@ -85,7 +85,7 @@ module.exports = function (grunt) {
         if (cfg.color) {
             args.push("--color"); // custom, to be handled by spec runner
         }
-        args.push("--assertName=" + cfg.assertName);
+        args.push("--xunitName=" + cfg.xunitName);
         var phantomProcess = grunt.util.spawn({
             cmd : 'phantomjs',
             args : args
@@ -124,7 +124,7 @@ module.exports = function (grunt) {
      * Passes the "debug", "verbose", "color" opts as command line flags ("--debug" etc.)
      * to PhantomJS executable for consideration by the the Phantom control script.
      *
-     * "assertName" opt tells Phantom control script under what global variable it should
+     * "xunitName" opt tells Phantom control script under what global variable it should
      * make available the XUnit object.
      *
      * Sample config:
@@ -134,7 +134,7 @@ module.exports = function (grunt) {
      *      debug : true,                   // default false
      *      verbose : true                  // default false
      *      color: process.stdout.isTTY     // default false
-     *      assertName : "assert"           // default "assert"
+     *      xunitName : "assert"           // default "assert"
      *    });
      * </pre>
      */
@@ -149,7 +149,7 @@ module.exports = function (grunt) {
         }
 
         // normalize config
-        cfg.assertName = cfg.assertName || "assert";
+        cfg.xunitName = cfg.xunitName || "assert";
         cfg.debug = !!cfg.debug;
         cfg.verbose = !!cfg.verbose;
         cfg.color = !!cfg.color;
