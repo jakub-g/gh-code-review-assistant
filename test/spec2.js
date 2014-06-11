@@ -1,5 +1,5 @@
 // this file is executed in the scope of PhantomJS
-var phantomTester = require('./lib/phantom-tester.js')
+var phantomTester = require('userscript-phantom-tester')
     .userScript("./polyfills/Function.bind.js")
     .userScript("../ghAssistant.user.js");
 
