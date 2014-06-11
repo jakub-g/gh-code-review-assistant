@@ -21,6 +21,7 @@
     "grunt-contrib-copy": "0.5.0",
     "grunt-contrib-jshint": "0.10.0",
     "grunt-contrib-watch": "0.6.1",
+    "grunt-run-phantom-specs": "0.0.0",
     "userscript-phantom-tester": "0.0.0"
   }
 }

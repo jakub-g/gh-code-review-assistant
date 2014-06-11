@@ -34,7 +34,7 @@ module.exports = function(grunt) {
         });
     }
 
-    grunt.loadTasks('./grunt-tasks');
+    grunt.loadNpmTasks('grunt-run-phantom-specs');
     grunt.config('run-phantom-specs', {
         src : ["test/spec*.js"],
         debug : true,
