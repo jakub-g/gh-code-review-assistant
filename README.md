@@ -1,6 +1,8 @@
 # GitHub Code Review Assistant
   ----------------------------
 
+[![Build Status](https://secure.travis-ci.org/jakub-g/gh-code-review-assistant.png?branch=master)](http://travis-ci.org/jakub-g/gh-code-review-assistant)
+  
 *Note: GitHub is a trademark of GitHub Inc. The developer of this extension is NOT affiliated with GitHub, Inc.*
 
 *This is an unofficial browser extension that is meant to enhance the experience of browsing pages in github.com domain.*
@@ -28,29 +30,26 @@ Preview
 Supported browsers
 ==================
 
-Firefox, Chrome, Opera. Should work on any reasonably modern version.
+Firefox, Chrome (should work on any reasonably modern version), Opera 12.
 
 Installation guide
 ==================
 
-Firefox
----
+### Firefox
 
  1. Install [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) and restart the browser.
  1. Go to [Userscripts.org GH Assistant page](http://userscripts.org/scripts/show/153049) and click "Install" in the top-right, or navigate to [ghAssistant.user.js on GitHub](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js).
  1. You should see an installation prompt. Accept the installation.
  1. GH Assistant should work right away.
 
-Chrome
---
+### Chrome
 
  1. Install [TamperMonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en).
  1. Go to [Userscripts.org GH Assistant page](http://userscripts.org/scripts/show/153049) and click "Install" in the top-right, or navigate to [ghAssistant.user.js on GitHub](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js).
  1. You should see an installation prompt. Click "OK" (Install with Tampermonkey).
  1. GH Assistant should work right away.
 
-Opera 12
---
+### Opera 12
 
  1. Launch the following addresses to configure the browser: set the directory on your disk where to store UserScripts, and activate UserScripts on HTTPS (GitHub is served via HTTPS):
 
@@ -65,8 +64,7 @@ Updates
 
 The userscript has an URL to this GitHub repo in its metadata. Hence in Firefox and Chrome you can benefit from easy updates.
 
-Firefox
---
+### Firefox
 
 Go to `about:addons` (or `Tools > Addons` from Firefox menu, or `Ctrl+Shift+A` from keyboard) to GreaseMonkey tab.
 Right click on the entry and choose "Find updates".
@@ -74,15 +72,13 @@ Right click on the entry and choose "Find updates".
 If you opted in to have automatic updates in Firefox, the same setting will also apply to GreaseMonkey
 which will periodically automatically check for updates of UserScripts.
 
-Chrome
---
+### Chrome
 
 Open `Tampermonkey menu > Options`. Select the entry and choose "Trigger an update" from the dropdown.
 
 Tampermonkey also checks for UserScripts updates periodically (configurable in extension's settings; default is 12h).
 
-Opera 12
---
+### Opera 12
 
 AFAIK you'll have to do it manually.
 
@@ -96,7 +92,7 @@ Example: [ariatemplates # pull 427](https://github.com/ariatemplates/ariatemplat
 I like it!
 ==========
 
-Sign up to Usescripts.org and [rate the script and/or become a fan](http://userscripts.org/scripts/show/153049).
+Sign up to Usescripts.org and [rate the script and/or become a fan](http://userscripts.org:8080/scripts/show/153049).
 
 Contributions and feature requests are welcome.
 
@@ -108,7 +104,7 @@ You may also like some other of my userscripts:
 - and several other
 
 See them on [Github](https://github.com/jakub-g/greasemonkey-userscripts)
-or [Userscripts.org](http://userscripts.org/users/204917/scripts)
+or [Userscripts.org](http://userscripts.org:8080/users/204917/scripts)
 
 Author's homepage: [jakub-g.github.io](http://jakub-g.github.io)
 

@@ -1,7 +1,12 @@
 module.exports = function(grunt) {
 
-    var syncConf = grunt.file.readJSON('./.grunt-sync.conf');
-    var syncEnabled = syncConf && syncConf.target;
+    var syncConfFile = './.grunt-sync.conf';
+    var syncEnabled = require('fs').existsSync(syncConfFile);
+    var syncConf;
+    if (syncEnabled) {
+        syncConf = grunt.file.readJSON(syncConfFile);
+        syncEnabled = !!syncConf.target;
+    }
 
     var testTasks = ['jshint', 'run-phantom-specs'];
 
