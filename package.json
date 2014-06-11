@@ -1,0 +1,27 @@
+{
+  "name": "gh-code-review-assistant",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "grunt test",
+    "tdd": "grunt tdd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jakub-g/gh-code-review-assistant.git"
+  },
+  "author": "jakub-g",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/jakub-g/gh-code-review-assistant/issues"
+  },
+  "homepage": "https://github.com/jakub-g/gh-code-review-assistant",
+  "devDependencies": {
+    "colors": "0.6.2",
+    "grunt": "0.4.5",
+    "grunt-contrib-copy": "0.5.0",
+    "grunt-contrib-jshint": "0.10.0",
+    "grunt-contrib-watch": "0.6.1",
+    "grunt-run-phantom-specs": "0.0.1",
+    "userscript-phantom-tester": "0.0.1"
+  }
+}

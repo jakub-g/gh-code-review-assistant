@@ -1,6 +1,7 @@
 *        text=auto
 
 *.js     text
+*.json   text
 *.md     text
 *.png    binary
 

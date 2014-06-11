@@ -33,76 +33,6 @@
  * limitations under the License.
  */
 
-// Changelog:
-// 0.1
-//  initial version
-// 0.1.2
-//  includes pull requests
-// 0.1.3
-//  do not fire the event on child nodes
-// 0.1.4
-//  fire intelligently on some child nodes
-// 0.2.0
-//  'expand all' / 'collapse all' button
-//  auto hiding on long diff
-//  code refactor
-// 0.3.0
-//  code review mark button
-// 0.4.0-20130201
-//  accomodated to new GH HTML markup
-// 0.4.1-20130212
-//  enabled also on /compare/ URLs
-// 0.5.0-20130305
-//  Works also in Chrome (Tampermonkey) now!
-// 0.6.0-20130404
-//  Added sidebar and footer to quickly go to the beginning of the current file.
-//  Added additional button to mark file as problematic (OK / Fail).
-//  After clicking "Reviewed" on file n, scroll to file n, and make the file n+1 expanded.
-// 0.6.1.20130417
-//  Fix the ugly text shadow on marked files
-// 0.6.2.20130417
-//  Refactor, comments
-// 0.9.0.20130418
-//  Local storage support to preserve the review across page refreshes!
-// 0.9.1.20130418
-//  Moved to separate GitHub repository
-// 0.9.2.20130418
-//  Fixed regression from 0.6.2 (reviewed file was not hiding on Fail/Ok click)
-// 0.9.3.20130419
-//  Major code refactor; fixed margin issue with inline comment button on the left
-// 0.9.4.20130603
-//  Do not hide files passed in the hash of the URL
-// 0.9.5.20130801
-//  Bring back 'Wipe GHA storage' buttons that disappeared after GH markup change
-// 0.9.6.20130913
-//  After reviewing an item, the next item is not expanded if it was reviewed; first unreviewed is expanded.
-//  (Experimental, disabled) Add 'contenteditable' to be able to inline edit the code of the diffs (each line separately);
-//    edits are not saved, not preserved on refresh
-// 0.10.0.20130913
-//  Support for navigating and executing all the buttons from keyboard.
-//  Upon finishing the review of a diff, the next item's to be reviewed filename gets focus.
-//  Updating the view accordingly on GHA storage wipe.
-// 0.10.1.20130917
-//  Expand/collapse button was not keyboard-friendly. Fixed.
-// 0.10.2.20131001
-//  Option to hide "Open in GitHub for Windows"
-// 0.10.3.20131004
-//  Now if sth like #diff-046dc342b82cf4f293c2f533e24aeec2 is passed in the URL (as GH uses in some links),
-//  the proper file will not be hidden.
-// 0.10.4.20131025
-//  When loading state from local storage, never-reviewed items were sometimes mistakenly marked as reviewed.
-// 1.0.0.20140407
-//  - Customizing settings right in the browser
-//  - Importing/exporting code review status through the hash in the URL
-//  - Third button state: expand unreviewed
-//  - Now using canonical SHA1 in storage
-//  - Commits with same SHA1 across forks are now sharing code review status
-//  - Added button to wipe just status for current URL
-//  - Some other little fixes
-// 1.0.1.20140410
-//  Fixed a bug where GHA would not start and throw an exception on repos with dots, underscores
-//  or uppercase chars in reponame or username
-
 // ============================================ CONFIG =============================================
 
 // This is the default config that will be read during the very first run of the script.
@@ -192,20 +122,30 @@ Enjoy the new version!";
 
 var gha = {
     classes : {},  // classes to be instantiated
-    util : {},     // classes with static methods
-    instance : {}  // holder of instantiated storage
+    instance : {},  // holder of instantiated storage
+    DomReader : {},
+    DomWriter : {},
+    DomUtil : {},
+    VisibilityManager : {},
+    ReviewStatusMarker : {},
+    StatusExporter : {},
+    Cfg : {},
+    Storage : {},
+    ClickHandlers : {},
 };
 
 // =================================================================================================
 
-var global = this;
-global.GM_getValue = global.GM_getValue || function () {};
-global.GM_setValue = global.GM_setValue || function () {};
-
-var pageId = document.location.pathname.replace(/\//g,'#'); // for easier regexes
-var isCommit  = pageId.match(/^#.*?#.*?#commit/);
-var isPull    = pageId.match(/^#.*?#.*?#pull/);
-var isCompare = pageId.match(/^#.*?#.*?#compare/);
+(function(){
+    // for easier regexes
+    var pageId = document.location.pathname.replace(/\//g,'#');
+    gha.Page = {
+        pageId    : pageId,
+        isCommit  : pageId.match(/^#.*?#.*?#commit/),
+        isPull    : pageId.match(/^#.*?#.*?#pull/),
+        isCompare : pageId.match(/^#.*?#.*?#compare/),
+    };
+})();
 
 var makeDiv = function (cssClassName) {
     return makeElem('div', cssClassName);
@@ -220,37 +160,41 @@ var isPositiveInteger = function (str) {
     return String(n) === str && n >= 0;
 };
 
-gha.util.DomReader = {};
+// =================================================================================================
+
+gha.DomReader = {};
 
 /**
  * Get a list of containers of the each diff-file.
+ * @return {Array}
  */
-gha.util.DomReader.getDiffContainers = function() {
+gha.DomReader.getDiffContainers = function() {
     var mainDiffDiv = document.getElementById('files');
-    var children = mainDiffDiv.children;
-    var nbOfCommits = children.length;
-
-    var out = [];
-    for(var i=0, ii = nbOfCommits; i<ii; i++) {
-        var child = children[i];
-        if(child.id && child.id.indexOf('diff-') === 0){
-            out.push(child);
-        }
-    }
-    return out;
+    var files = [].filter.call(mainDiffDiv.children, function (elm) {
+        return elm.nodeName == "DIV" && elm.classList.contains('file'); // elm.id.match(/^diff\-/);
+    });
+    return files;
 };
 
-gha.util.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
+/**
+ * How many files are there in current commit / pull request
+ * @return {Integer}
+ */
+gha.DomReader.getNumberOfFiles = function () {
+    return gha.DomReader.getDiffContainers().length;
+};
+
+gha.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
     return diffContainerHeader.querySelector('.info').children[1].innerHTML.trim();
 };
 
 // =================================================================================================
 
-gha.util.DomWriter = {};
+gha.DomWriter = {};
 
-gha.util.DomWriter.ghaReviewButtonClassNameBase = 'ghaButtonState';
+gha.DomWriter.ghaReviewButtonClassNameBase = 'ghaFileState';
 
-gha.util.DomWriter.attachGlobalCss = function () {
+gha.DomWriter.attachGlobalCss = function () {
     var css = [];
 
     css.push('.floatLeft {float:left;}');
@@ -258,38 +202,38 @@ gha.util.DomWriter.attachGlobalCss = function () {
 
     css.push('a.ghaFileNameSpan {text-decoration: none; margin-left: -10px;  padding: 0 10px;}'); // so that the box's outline looks nicer when focused
 
-    css.push('.ghaButtonStateNormal {\
+    css.push('.ghaFileStateNormal {\
         background-image:   linear-gradient(to bottom, #fafafa, #eaeaea) !important;\
     }');
-    css.push('.ghaButtonStateOk {\
+    css.push('.ghaFileStateOk {\
         background-image:   linear-gradient(to bottom, #333, #444) !important;\
         text-shadow: none !important;\
     }');
-    css.push('.ghaButtonStateFail {\
+    css.push('.ghaFileStateFail {\
         background-image:   linear-gradient(to bottom, #833, #844) !important;\
         text-shadow: none !important;\
     }');
 
-    css.push('.ghaButtonStateNormal a.ghaFileNameSpan { color: #555 !important;}');
-    css.push('.ghaButtonStateOk     a.ghaFileNameSpan { color: #fff !important;}');
-    css.push('.ghaButtonStateFail   a.ghaFileNameSpan { color: #fff !important;}');
+    css.push('.ghaFileStateNormal a.ghaFileNameSpan { color: #555 !important;}');
+    css.push('.ghaFileStateOk     a.ghaFileNameSpan { color: #fff !important;}');
+    css.push('.ghaFileStateFail   a.ghaFileNameSpan { color: #fff !important;}');
 
     // we have border, let's tell Firefox not to add its default dotted outline
     css.push('.minibutton:focus {outline: 0;}');
 
-    css.push('.ghaButtonStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
-    css.push('.ghaButtonStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
-    css.push('.ghaButtonStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
+    css.push('.ghaFileStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
+    css.push('.ghaFileStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
+    css.push('.ghaFileStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
 
     // default GH CSS is suited only for their one button "view file", let's fix it as we add 2 more buttons
-    css.push('.ghaButtonStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghaButtonStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
-    css.push('.ghaButtonStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaFileStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaFileStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaFileStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
 
     css.push('.ghaFileNameSpan:focus {outline:0; border-radius:5px;}');
-    css.push('.ghaButtonStateNormal .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghaButtonStateFail   .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
-    css.push('.ghaButtonStateOk     .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghaFileStateNormal .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaFileStateFail   .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
+    css.push('.ghaFileStateOk     .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px #fc0;}');
 
     css.push('.ghaBottomButton {\
         margin:40px 5px 20px 15px;\
@@ -432,21 +376,21 @@ gha.util.DomWriter.attachGlobalCss = function () {
         css.push('a[href^="github-windows://"], a[href^="http://windows.github.com"] {display: none;}');
     }
 
-    gha.util.DomUtil.addCss(css.join('\n'));
+    gha.DomUtil.addCss(css.join('\n'));
 };
 
 /**
  * Attach click listeners to each of the headers of the files in the diff
  */
-gha.util.DomWriter.attachToggleDisplayOnClickListeners = function() {
-    var diffContainers = gha.util.DomReader.getDiffContainers();
+gha.DomWriter.attachToggleDisplayOnClickListeners = function() {
+    var diffContainers = gha.DomReader.getDiffContainers();
 
     for(var i=0, ii = diffContainers.length; i<ii; i++) {
-        gha.util.DomWriter._attachClickListenersToChild(diffContainers[i]);
+        gha.DomWriter._attachClickListenersToChild(diffContainers[i]);
     }
 };
 
-gha.util.DomWriter._attachClickListenersToChild = function (diffContainer) {
+gha.DomWriter._attachClickListenersToChild = function (diffContainer) {
     if(!diffContainer.id || diffContainer.id.indexOf('diff-') == -1){
         return;
     }
@@ -457,8 +401,8 @@ gha.util.DomWriter._attachClickListenersToChild = function (diffContainer) {
 
     var diffContainerBody = diffContainer.children[1];
 
-    var handlerForFileNameHeader = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, false);
-    var handlerForHeader         = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
+    var handlerForFileNameHeader = gha.ClickHandlers.createToggleDisplayHandler(diffContainerBody, false);
+    var handlerForHeader         = gha.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
 
     diffContainerFileNameHeader.addEventListener('click', handlerForFileNameHeader, false);
     diffContainerHeader        .addEventListener('click', handlerForHeader, true);
@@ -468,12 +412,13 @@ gha.util.DomWriter._attachClickListenersToChild = function (diffContainer) {
 /**
  * Add buttons that collapse/expand all the diffs on the current page.
  */
-gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
+gha.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
 
     var buttonBarContainer = document.querySelector('#toc');
     var buttonBar = buttonBarContainer.children[0];
 
     var btn = document.createElement('a');
+    btn.id = 'ghaToggleCollapseExpand';
     btn.className = 'minibutton';
     btn.tabIndex = 0;
     btn.href = 'javascript:void(0);';
@@ -491,7 +436,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
             nowVisible = 0;
             btn.innerHTML = L10N.expandUnreviewed;
         }
-        gha.util.VisibilityManager.toggleDisplayAll(nowVisible);
+        gha.VisibilityManager.toggleDisplayAll(nowVisible);
     });
     // the innerHTML must be in line with the above function's logic
     btn.innerHTML = (nowVisible) ? L10N.collapseAll : L10N.expandUnreviewed;
@@ -503,7 +448,7 @@ gha.util.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) 
  * Attach Ok/Fail buttons for code review, and sidebars/footers for navigating to the top of the file,
  * for each of the files on the diff list.
  */
-gha.util.DomWriter.attachPerDiffFileFeatures = function () {
+gha.DomWriter.attachPerDiffFileFeatures = function () {
 
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
@@ -515,17 +460,17 @@ gha.util.DomWriter.attachPerDiffFileFeatures = function () {
             continue;
         }
         if (CONFIG.enableReviewedButtons.val) {
-            gha.util.DomWriter._attachReviewStatusButton(child, L10N.ok);
-            gha.util.DomWriter._attachReviewStatusButton(child, L10N.fail);
-            gha.util.DomWriter.makeFileNameKeyboardAccessible(child);
+            gha.DomWriter._attachReviewStatusButton(child, L10N.ok);
+            gha.DomWriter._attachReviewStatusButton(child, L10N.fail);
+            gha.DomWriter.makeFileNameKeyboardAccessible(child);
         }
         if (CONFIG.enableDiffSidebarAndFooter.val) {
-            gha.util.DomWriter._attachSidebarAndFooter(child);
+            gha.DomWriter._attachSidebarAndFooter(child);
         }
     }
 };
 
-gha.util.DomWriter.makeFileNameKeyboardAccessible = function (child) {
+gha.DomWriter.makeFileNameKeyboardAccessible = function (child) {
     var fileNameSpan = child.querySelector('.info > .js-selectable-text');
     // turns out getting parent is impossible after changing outerHTML, let's do it now
     var diffContainerBody = fileNameSpan.parentNode.parentNode.parentNode.children[1];
@@ -542,31 +487,32 @@ gha.util.DomWriter.makeFileNameKeyboardAccessible = function (child) {
     child.querySelector('.ghaFileNameSpan').href = 'javascript:void(0);';
 
     // Ok, now we're keyboard-reachable, let's add an event listener then which shows/hides the diff
-    var handler = gha.util.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
+    var handler = gha.ClickHandlers.createToggleDisplayHandler(diffContainerBody, true);
     fileNameSpan.addEventListener('click', handler, false);
 };
 
-gha.util.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also cssClassNamePostfix*/) {
+gha.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also cssClassNamePostfix*/) {
     if(!diffContainer.id || diffContainer.id.indexOf('diff-') == -1){
         return;
     }
 
     var newButton = document.createElement('a');
-    newButton.className = 'minibutton';
+    newButton.className = 'minibutton ghaToggleFileState ghaToggleFileState' + (text == L10N.ok ? 'Ok' : 'Fail');
+
     newButton.href = "javascript:void(0)"; // crucial to make it launchable from keyboard
     newButton.tabIndex = 0;
     newButton.innerHTML = text;
-    newButton.addEventListener('click', gha.util.ClickHandlers.createReviewButtonHandler(text, diffContainer));
+    newButton.addEventListener('click', gha.ClickHandlers.createReviewButtonHandler(text, diffContainer));
 
     var parentOfNewButton = diffContainer.querySelector('div.actions > div.button-group');
-    gha.util.DomUtil.insertAsFirstChild(newButton, parentOfNewButton);
+    gha.DomUtil.insertAsFirstChild(newButton, parentOfNewButton);
 };
 
 /**
  * Add sidebar and footer to each of the files in the diff. When clicked, that sidebar/footer
  * scrolls page to the top of the current file.
  */
-gha.util.DomWriter._attachSidebarAndFooter = function (child) {
+gha.DomWriter._attachSidebarAndFooter = function (child) {
     if(!child.id || child.id.indexOf('diff-') == -1){
         return;
     }
@@ -588,12 +534,12 @@ gha.util.DomWriter._attachSidebarAndFooter = function (child) {
 
 // =================================================================================================
 
-gha.util.StatusExporter = {};
+gha.StatusExporter = {};
 
-gha.util.StatusExporter.MAGIC_STRING = ";GHADATA=";
+gha.StatusExporter.MAGIC_STRING = ";GHADATA=";
 
-gha.util.StatusExporter.createButtonSerialize = function () {
-    var btn = gha.util.DomUtil.createButton({
+gha.StatusExporter.createButtonSerialize = function () {
+    var btn = gha.DomUtil.createButton({
         text : L10N.exportStatusToUrl
     });
 
@@ -621,7 +567,7 @@ gha.util.StatusExporter.createButtonSerialize = function () {
             return item.key + ":" + item.value;
         }).join("&");
 
-        var magic = gha.util.StatusExporter.MAGIC_STRING;
+        var magic = gha.StatusExporter.MAGIC_STRING;
         var hashChunk = global.encodeURIComponent(magic + serialized);
         var hashIdx = window.location.hash.indexOf(magic);
         if (hashIdx >= 0) {
@@ -636,13 +582,13 @@ gha.util.StatusExporter.createButtonSerialize = function () {
     return btn;
 };
 
-gha.util.StatusExporter.createButtonDeserialize = function () {
-    var btn = gha.util.DomUtil.createButton({
+gha.StatusExporter.createButtonDeserialize = function () {
+    var btn = gha.DomUtil.createButton({
         text : L10N.importStatusFromUrl
     });
 
     btn.addEventListener('click', function () {
-        var magic = gha.util.StatusExporter.MAGIC_STRING;
+        var magic = gha.StatusExporter.MAGIC_STRING;
         var hash = global.decodeURIComponent(window.location.hash);
 
         // check if GHADATA is present in hash
@@ -682,9 +628,9 @@ gha.util.StatusExporter.createButtonDeserialize = function () {
 
 // =================================================================================================
 
-gha.util.Cfg = {};
+gha.Cfg = {};
 
-gha.util.Cfg.synchronizeSettingsWithBrowser = function () {
+gha.Cfg.synchronizeSettingsWithBrowser = function () {
     // Read things from GM_getValue, use CONFIG above just as defaults in case entries are not there
     // After the first run, we want a perfect sync between GM_getValue and CONFIG
 
@@ -706,13 +652,28 @@ gha.util.Cfg.synchronizeSettingsWithBrowser = function () {
     }
 };
 
-gha.util.Cfg.setValue = function (key, value) {
+gha.Cfg.setValue = function (key, value) {
     CONFIG[key].val = value;
     GM_setValue(key, value);
 };
 
-gha.util.Cfg.createCfgOpenButton = function (div) {
-    var btn = gha.util.DomUtil.createButton({
+gha.Cfg.getDynamicConfig = function (CONFIG, nbOfFiles) {
+    var EVALEDCONFIG = {
+        autoHide : false,
+        autoHideLong : false
+    };
+    if (nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
+        if (CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
+            EVALEDCONFIG.autoHide = true;
+        } else if (CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
+            EVALEDCONFIG.autoHideLong = true;
+        }
+    }
+    return EVALEDCONFIG;
+};
+
+gha.Cfg.createCfgOpenButton = function (div) {
+    var btn = gha.DomUtil.createButton({
         text : L10N.openCfg,
         className : "ghaCfgOpenButton",
     });
@@ -725,23 +686,25 @@ gha.util.Cfg.createCfgOpenButton = function (div) {
 };
 // =================================================================================================
 
-gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
+gha.DomWriter.attachStorageWipeButtons = function (parentDiv) {
     var storage = gha.instance.storage;
 
-    var buttonInfo = gha.util.DomUtil.createButton({
+    var buttonInfo = gha.DomUtil.createButton({
         text : L10N.wipeStorageText,
         disabled : true
     });
 
-    var buttonCurrentEntity = gha.util.Storage.createWipeButton({
-        text : (isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
+    var buttonCurrentEntity = gha.Storage.createWipeButton({
+        id : "ghaWipeCommitOrUrl",
+        text : (gha.Page.isCommit ? L10N.buttonWipeCurrentCommitStorage : L10N.buttonWipeCurrentUrlStorage),
         storagePrefix : storage._objectId,
         wipeMsg : function () {
             return L10N.questionWipeEntry  + storage._objectId + " \n%TODEL?";
         }
     });
 
-    var buttonRepo = gha.util.Storage.createWipeButton({
+    var buttonRepo = gha.Storage.createWipeButton({
+        id : "ghaWipeRepo",
         text : L10N.buttonWipeRepoStorage,
         storagePrefix : storage._repoId,
         wipeMsg : function () {
@@ -756,7 +719,8 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
         }
     });
 
-    var buttonAll = gha.util.Storage.createWipeButton({
+    var buttonAll = gha.Storage.createWipeButton({
+        id : "ghaWipeAll",
         text : L10N.buttonWipeAllStorage,
         storagePrefix : null,
         wipeMsg : function () {
@@ -774,13 +738,13 @@ gha.util.DomWriter.attachStorageWipeButtons = function (parentDiv) {
     parentDiv.appendChild(div);
 };
 
-gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
-    var buttonInfo = gha.util.DomUtil.createButton({
+gha.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
+    var buttonInfo = gha.DomUtil.createButton({
         text : L10N.codeReviewStatusInfoBtn,
         disabled : true
     });
-    var buttonSerialize = gha.util.StatusExporter.createButtonSerialize();
-    var buttonDeserialize = gha.util.StatusExporter.createButtonDeserialize();
+    var buttonSerialize = gha.StatusExporter.createButtonSerialize();
+    var buttonDeserialize = gha.StatusExporter.createButtonDeserialize();
 
     var div = makeDiv('floatRight');
 
@@ -791,7 +755,7 @@ gha.util.DomWriter.attachStatusImportExportButtons = function (parentDiv) {
     parentDiv.appendChild(div);
 };
 
-gha.util.DomWriter.createGHACfgDialog = function () {
+gha.DomWriter.createGHACfgDialog = function () {
     var wrapperDiv = makeDiv('ghaDialogParent');
 
     var cfgDiv = makeDiv("ghaDialogCenter");
@@ -820,7 +784,7 @@ gha.util.DomWriter.createGHACfgDialog = function () {
             }
 
             if (valid) {
-                gha.util.Cfg.setValue(key, newVal);
+                gha.Cfg.setValue(key, newVal);
                 console.info("Writing config: ", key, newVal);
                 document.querySelector('.ghaRefreshInfoDiv').style.display = "block";
                 saveIndicator.style.cssText += "background-color: lime; color: black;";
@@ -884,9 +848,9 @@ gha.util.DomWriter.createGHACfgDialog = function () {
     return wrapperDiv;
 };
 
-gha.util.DomWriter.attachGHACfgButton = function (parentDiv) {
-    var cfgDiv = gha.util.DomWriter.createGHACfgDialog();
-    var btn = gha.util.Cfg.createCfgOpenButton(cfgDiv);
+gha.DomWriter.attachGHACfgButton = function (parentDiv) {
+    var cfgDiv = gha.DomWriter.createGHACfgDialog();
+    var btn = gha.Cfg.createCfgOpenButton(cfgDiv);
 
     var div = makeDiv();
     div.style.cssText = "clear:both";
@@ -895,7 +859,7 @@ gha.util.DomWriter.attachGHACfgButton = function (parentDiv) {
     parentDiv.appendChild(div);
 };
 
-gha.util.DomWriter.enableEditing = function () {
+gha.DomWriter.enableEditing = function () {
     document.getElementById('files').setAttribute('contenteditable', true);
     document.body.setAttribute('spellcheck', false); // needs to be set on BODY to not mark contenteditable elements in red
     /*var items = document.querySelectorAll('td.diff-line-code');
@@ -906,12 +870,12 @@ gha.util.DomWriter.enableEditing = function () {
 
 // =================================================================================================
 
-gha.util.Storage = {};
+gha.Storage = {};
 
-gha.util.Storage.createWipeButton = function (cfg) {
+gha.Storage.createWipeButton = function (cfg) {
     var storage = gha.instance.storage;
 
-    var btn = gha.util.DomUtil.createButton(cfg);
+    var btn = gha.DomUtil.createButton(cfg);
 
     btn.addEventListener('click', function () {
         var prefix = cfg.storagePrefix;
@@ -921,7 +885,7 @@ gha.util.Storage.createWipeButton = function (cfg) {
         if (nItemsToBeDeleted === 0) {
             if (prefix) {
                 msg = L10N.noEntriesFoundPrefix + prefix.replace(storage._prefix, "");
-                if (isCommit) {
+                if (gha.Page.isCommit) {
                     var nOrphanedCommits = storage.checkOrphanedCommits();
                     if (nOrphanedCommits > 0) {
                         msg += "\n\n" + L10N.orphanedCommitsInfo.replace("%ORPH", nOrphanedCommits);
@@ -931,7 +895,7 @@ gha.util.Storage.createWipeButton = function (cfg) {
                 msg = L10N.noEntriesFound;
             }
             window.alert(msg);
-            setTimeout(gha.util.Storage.clearSlowEventsHack, 0);
+            setTimeout(gha.Storage.clearSlowEventsHack, 0);
             return;
         } else {
             msg = cfg.wipeMsg().replace("%TODEL", "(" + nItemsToBeDeleted + " entries)");
@@ -939,7 +903,7 @@ gha.util.Storage.createWipeButton = function (cfg) {
                 storage.wipeStorage(cfg.storagePrefix);
                 window.alert(L10N.alertWipeDone);
             }
-            setTimeout(gha.util.Storage.clearSlowEventsHack, 0);
+            setTimeout(gha.Storage.clearSlowEventsHack, 0);
         }
     });
 
@@ -952,19 +916,19 @@ gha.util.Storage.createWipeButton = function (cfg) {
  * buttons due to blocking nature of prompt and alter. Let's remove that data entries not to
  * upload data connected to GHA
  */
-gha.util.Storage.clearSlowEventsHack = function () {
+gha.Storage.clearSlowEventsHack = function () {
     window.localStorage.removeItem("slow-events");
 };
 
 // =================================================================================================
 
-gha.util.VisibilityManager = {};
+gha.VisibilityManager = {};
 
 /**
  * Hide long diffs, i.e. those whose diff size is > @minDiff
  * @param {Integer} minDiff
  */
-gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
+gha.VisibilityManager.hideLongDiffs = function(minDiff) {
 
     var mainDiffDiv = document.getElementById('files');
     var children = mainDiffDiv.children;
@@ -995,21 +959,16 @@ gha.util.VisibilityManager.hideLongDiffs = function(minDiff) {
  * @param {Integer} iVisible state after this invocation (0 none, 1 all, 2 unreviewed)
  * @param {Boolean} bKeepItemFromUrlHash whether to skip hiding files that were passed by hash in the URL. Default false.
  */
-gha.util.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromUrlHash) {
+gha.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromUrlHash) {
 
     bKeepItemFromUrlHash = (bKeepItemFromUrlHash === true);
-    var mainDiffDiv = document.getElementById('files');
-    var children = mainDiffDiv.children;
-    var nbOfCommits = children.length;
+
+    var diffContainers = gha.DomReader.getDiffContainers();
+    var nbOfCommits = diffContainers.length;
 
     var hashInUrl = document.location.hash.replace('#', '');
-    for (var i=0, ii = nbOfCommits; i<ii; i++) {
-        var child = children[i];
-        if(!child.id || child.id.indexOf('diff-') == -1){
-            continue;
-        }
-
-        var diffContainer = child;
+    for (var i = 0, ii = nbOfCommits; i < ii; i++) {
+        var diffContainer = diffContainers[i];
         var diffContainerHeader = diffContainer.children[0];
         var diffContainerBody = diffContainer.children[1];
         var fileName = diffContainer.querySelector('.meta').getAttribute('data-path');
@@ -1022,7 +981,7 @@ gha.util.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromU
         if (iVisible == 2) { // "display unreviewed" mode
             var cl = diffContainerHeader.classList;
             // reading this from DOM since for now, the import from URL feature just highlights items without affecting local storage..
-            if (cl.contains("ghaButtonStateFail") || cl.contains("ghaButtonStateOk")) {
+            if (cl.contains("ghaFileStateFail") || cl.contains("ghaFileStateOk")) {
                 style.display = "none";
             } else {
                 style.display = "block";
@@ -1037,7 +996,7 @@ gha.util.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromU
  * If there was something like #diff-046dc342b82cf4f293c2f533e24aeec2 passed in the URL, it points to a specific
  * file that should be made visible.
  */
-gha.util.VisibilityManager.restoreElementsFromHash = function() {
+gha.VisibilityManager.restoreElementsFromHash = function() {
     var hash = document.location.hash.replace('#', '');
     var match; // using match[0] instead of hash in querySelector due to possible ;GHADATA in hash
 
@@ -1062,13 +1021,13 @@ gha.util.VisibilityManager.restoreElementsFromHash = function() {
 
 // =================================================================================================
 
-gha.util.ClickHandlers = {};
+gha.ClickHandlers = {};
 
 /**
  * @param elem element to be toggled upon clicking
  * @param bStrictTarget whether the event listener should fire only on its strict target or also children
  */
-gha.util.ClickHandlers.createToggleDisplayHandler = function(elem, bStrictTarget) {
+gha.ClickHandlers.createToggleDisplayHandler = function(elem, bStrictTarget) {
     return function(evt){
         if(bStrictTarget){
             if (evt.currentTarget != evt.target) {
@@ -1086,18 +1045,18 @@ gha.util.ClickHandlers.createToggleDisplayHandler = function(elem, bStrictTarget
     };
 };
 
-gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer) {
+gha.ClickHandlers.createReviewButtonHandler = function (text, diffContainer) {
     return function(evt) {
 
         var diffContainerHeader = diffContainer.children[0]; // .meta
         var diffContainerBody = diffContainer.children[1];   // .data
         var currentDiffIdx = Number(diffContainer.id.replace('diff-',''));
 
-        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var btnBaseClass = gha.DomWriter.ghaReviewButtonClassNameBase;
         var ghaClassName = btnBaseClass + text;
         var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
         var wasMarked = diffContainerHeader.classList.contains(ghaClassName);
-        var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
+        var filePath = gha.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
 
         if(wasMarked){
             /* unmark */
@@ -1106,7 +1065,7 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
             gha.instance.storage.clearState(filePath);
 
             // unmark the header with background color change
-            gha.util.ReviewStatusMarker.unmark(diffContainerHeader, ghaClassName);
+            gha.ReviewStatusMarker.unmark(diffContainerHeader, ghaClassName);
         } else {
             /* mark as Ok/Fail */
 
@@ -1115,7 +1074,7 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
             gha.instance.storage.saveState(filePath, newState);
 
             // mark the header with background color change
-            gha.util.ReviewStatusMarker.mark(diffContainerHeader, ghaClassName, ghaClassNameAlt);
+            gha.ReviewStatusMarker.mark(diffContainerHeader, ghaClassName, ghaClassNameAlt);
 
             // hide the just-reviewed file contents
             diffContainerBody.style.display = 'none';
@@ -1124,7 +1083,7 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
             document.location = '#diff-' + currentDiffIdx;
 
             // expand the next not-yet-reviewed file, if any (without looping to the beginning)
-            var nextFileContainer = gha.util.ReviewStatusMarker.findNextUnmarked(currentDiffIdx);
+            var nextFileContainer = gha.ReviewStatusMarker.findNextUnmarked(currentDiffIdx);
             if (nextFileContainer) {
                 // make the diff visible
                 nextFileContainer.children[1].style.display = 'block';
@@ -1138,9 +1097,9 @@ gha.util.ClickHandlers.createReviewButtonHandler = function (text, diffContainer
 
 // =================================================================================================
 
-gha.util.ReviewStatusMarker = {
+gha.ReviewStatusMarker = {
     mark : function (diffContainerHeader, ghaClassName, ghaClassNameAlt) {
-        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var btnBaseClass = gha.DomWriter.ghaReviewButtonClassNameBase;
         // 0 remove 'Normal'
         // 1 remove 'Ok' if we're setting 'Fail' and the opposite as well
         // 2 add the class name for 'Fail' / 'Ok'
@@ -1148,13 +1107,13 @@ gha.util.ReviewStatusMarker = {
     },
 
     unmark : function (diffContainerHeader, ghaClassName) {
-        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var btnBaseClass = gha.DomWriter.ghaReviewButtonClassNameBase;
         // remove the added class name for 'Fail' / 'Ok', add class for 'Normal'
         diffContainerHeader.className = diffContainerHeader.className.replace(ghaClassName, '') + " " + btnBaseClass + "Normal";
     },
 
     findNextUnmarked : function (diffIdx) {
-        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var btnBaseClass = gha.DomWriter.ghaReviewButtonClassNameBase;
         var wasReviewed = true;
         var fileContainer;
 
@@ -1174,13 +1133,13 @@ gha.util.ReviewStatusMarker = {
     },
 
     unmarkAll : function () {
-        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
-        var diffContainers = gha.util.DomReader.getDiffContainers();
+        var btnBaseClass = gha.DomWriter.ghaReviewButtonClassNameBase;
+        var diffContainers = gha.DomReader.getDiffContainers();
 
         for(var i=0, ii = diffContainers.length; i<ii; i++) {
             var diffContainerHeader = diffContainers[i].children[0];
-            gha.util.ReviewStatusMarker.unmark (diffContainerHeader, btnBaseClass + "Ok");
-            gha.util.ReviewStatusMarker.unmark (diffContainerHeader, btnBaseClass + "Fail");
+            gha.ReviewStatusMarker.unmark (diffContainerHeader, btnBaseClass + "Ok");
+            gha.ReviewStatusMarker.unmark (diffContainerHeader, btnBaseClass + "Fail");
         }
     }
 };
@@ -1196,13 +1155,13 @@ gha.classes.GHALocalStorage = function () {
     this._repoId = null;
 
     this.init = function () {
-        var matches = pageId.match(/^#([A-Za-z0-9_\-\.]+#[A-Za-z0-9_\-\.]+)#(?:commit|pull|compare)#([A-Za-z0-9_\-\.]+)/);
+        var matches = gha.Page.pageId.match(/^#([A-Za-z0-9_\-\.]+#[A-Za-z0-9_\-\.]+)#(?:commit|pull|compare)#([A-Za-z0-9_\-\.]+)/);
         if (matches) {
             // we want repoId to be a leading substring of objectId
             this._objectId = matches[0];     // sth like "#ariatemplates#ariatemplates#pull#1060"
             this._repoId = "#" + matches[1]; // sth like "#ariatemplates#ariatemplates"
 
-            if (isCommit) {
+            if (gha.Page.isCommit) {
                 // Use canonical SHA1 of the commit, the URL might contain shortened one
                 // or sth like some-other-sha^^ etc.
                 // However fallback to matches[2] just in case GH changed the selector or something
@@ -1211,7 +1170,7 @@ gha.classes.GHALocalStorage = function () {
             }
             //debugger;
         } else {
-            console.error("Unable to create a local storage key for " + pageId);
+            console.error("Unable to create a local storage key for " + gha.Page.pageId);
             this.saveState = this.loadState = this.clearState = function () {};
         }
     };
@@ -1248,7 +1207,7 @@ gha.classes.GHALocalStorage = function () {
             }
         }
 
-        gha.util.ReviewStatusMarker.unmarkAll();
+        gha.ReviewStatusMarker.unmarkAll();
     };
 
     this.checkSize = function (arbitraryPrefix) {
@@ -1295,7 +1254,7 @@ gha.classes.GHALocalStorageLoader = function (storage) {
     this._storage = storage;
 
     this.run = function () {
-        var diffContainers = gha.util.DomReader.getDiffContainers();
+        var diffContainers = gha.DomReader.getDiffContainers();
 
         for(var i=0, ii = diffContainers.length; i<ii; i++) {
             this._updateStateFromStorage(diffContainers[i]);
@@ -1305,25 +1264,25 @@ gha.classes.GHALocalStorageLoader = function (storage) {
     this._updateStateFromStorage = function(diffContainer) {
         var diffContainerHeader = diffContainer.children[0];
 
-        var filePath = gha.util.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
+        var filePath = gha.DomReader.getFilePathFromDiffContainerHeader(diffContainerHeader);
         var state = this._storage.loadState(filePath); // might be 0, 1 or undefined
 
-        var btnBaseClass = gha.util.DomWriter.ghaReviewButtonClassNameBase;
+        var btnBaseClass = gha.DomWriter.ghaReviewButtonClassNameBase;
         if (state !== null && state !== undefined) {
             var text = (state === "0") ? L10N.fail : L10N.ok;
             var ghaClassName = btnBaseClass + text;
             var ghaClassNameAlt = btnBaseClass + (text === L10N.ok ? L10N.fail : L10N.ok);
 
-            gha.util.ReviewStatusMarker.mark (diffContainerHeader, ghaClassName, ghaClassNameAlt);
+            gha.ReviewStatusMarker.mark (diffContainerHeader, ghaClassName, ghaClassNameAlt);
         } else {
-            gha.util.ReviewStatusMarker.unmark (diffContainerHeader, null);
+            gha.ReviewStatusMarker.unmark (diffContainerHeader, null);
         }
     };
 };
 
 // =================================================================================================
 
-gha.util.DomUtil = {
+gha.DomUtil = {
     addCss : function (sCss) {
         var dStyle = document.createElement('style');
         dStyle.type = 'text/css';
@@ -1338,6 +1297,7 @@ gha.util.DomUtil = {
     createButton : function (cfg) {
         var btn = document.createElement('button');
 
+        btn.id = cfg.id || "";
         btn.disabled = !!cfg.disabled;
         btn.style.cssText = cfg.style || "";
         btn.innerHTML = cfg.text || "";
@@ -1350,22 +1310,15 @@ gha.util.DomUtil = {
 
 // =================================================================================================
 
+var global = this;
 var main = function () {
-    gha.util.Cfg.synchronizeSettingsWithBrowser();
+    global.GM_getValue = global.GM_getValue || function () {};
+    global.GM_setValue = global.GM_setValue || function () {};
 
-    // read config
-    var mainDiffDiv = document.getElementById('files');
-    var nbOfFiles = mainDiffDiv.children.length;
+    gha.Cfg.synchronizeSettingsWithBrowser();
 
-    var autoHide = false;
-    var autoHideLong = false;
-    if(nbOfFiles >= CONFIG.dontHideAnythingIfLessThanFiles.val) {
-        if(CONFIG.hideAllWhenMoreThanFiles.val > 0 && nbOfFiles > CONFIG.hideAllWhenMoreThanFiles.val){
-            autoHide = true;
-        }else if(CONFIG.hideFileWhenDiffMoreThanLines.val > 0) {
-            autoHideLong = true;
-        }
-    }
+    var nbOfFiles = gha.DomReader.getNumberOfFiles();
+    var EVALEDCONFIG = gha.Cfg.getDynamicConfig(CONFIG, nbOfFiles);
 
     // let's go
     gha.instance.storage = new gha.classes.GHALocalStorage();
@@ -1374,23 +1327,23 @@ var main = function () {
     var storageLoader = new gha.classes.GHALocalStorageLoader(gha.instance.storage);
     storageLoader.run();
 
-    gha.util.DomWriter.attachGlobalCss();
-    gha.util.DomWriter.attachToggleDisplayOnClickListeners();
-    if(autoHide) {
-        gha.util.VisibilityManager.toggleDisplayAll(false, true);
-    }else if(autoHideLong) {
-        gha.util.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines.val);
+    gha.DomWriter.attachGlobalCss();
+    gha.DomWriter.attachToggleDisplayOnClickListeners();
+    if (EVALEDCONFIG.autoHide) {
+        gha.VisibilityManager.toggleDisplayAll(false, true);
+    } else if (EVALEDCONFIG.autoHideLong) {
+        gha.VisibilityManager.hideLongDiffs(CONFIG.hideFileWhenDiffMoreThanLines.val);
     }
-    gha.util.VisibilityManager.restoreElementsFromHash();
-    gha.util.DomWriter.attachCollapseExpandDiffsButton(autoHide);
+    gha.VisibilityManager.restoreElementsFromHash();
+    gha.DomWriter.attachCollapseExpandDiffsButton(EVALEDCONFIG.autoHide);
 
-    gha.util.DomWriter.attachPerDiffFileFeatures();
+    gha.DomWriter.attachPerDiffFileFeatures();
 
     var footer = document.querySelector('body > .container');
 
-    gha.util.DomWriter.attachStorageWipeButtons(footer);
-    gha.util.DomWriter.attachStatusImportExportButtons(footer);
-    gha.util.DomWriter.attachGHACfgButton(footer);
+    gha.DomWriter.attachStorageWipeButtons(footer);
+    gha.DomWriter.attachStatusImportExportButtons(footer);
+    gha.DomWriter.attachGHACfgButton(footer);
 
     var isFirstRun = (GM_getValue('firstRun.1.0') === undefined);
     if (isFirstRun) {
@@ -1400,7 +1353,7 @@ var main = function () {
             document.querySelector('.ghaDialogParent').style.display = "block";
         }, 800);
     }
-    // gha.util.DomWriter.enableEditing();
+    // gha.DomWriter.enableEditing();
 };
 
 main();
