@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Collapse & expand files one by one on diffs and mark them as reviewed. Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         1.0.1.20140410
+// @version         1.0.2.20140724
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.github.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -504,7 +504,7 @@ gha.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also c
     newButton.innerHTML = text;
     newButton.addEventListener('click', gha.ClickHandlers.createReviewButtonHandler(text, diffContainer));
 
-    var parentOfNewButton = diffContainer.querySelector('div.actions > div.button-group');
+    var parentOfNewButton = diffContainer.querySelector('div.actions');
     gha.DomUtil.insertAsFirstChild(newButton, parentOfNewButton);
 };
 

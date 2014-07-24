@@ -67,3 +67,6 @@
 // 1.0.1.20140410
 //  Fixed a bug where GHA would not start and throw an exception on repos with dots, underscores
 //  or uppercase chars in reponame or username
+// 1.0.2.20140724
+//  Script stopped working due to GH HTML structure change, this is a quick fix.
+//  A number of refactorings and some automated tests were added (work in progress).
