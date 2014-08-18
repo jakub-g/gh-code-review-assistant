@@ -397,11 +397,11 @@ gha.DomWriter._attachClickListenersToChild = function (diffContainer) {
 gha.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
 
     var buttonBarContainer = document.querySelector('#toc');
-    var buttonBar = buttonBarContainer.children[0];
+    var refElement = buttonBarContainer.querySelector('.toc-diff-stats');
 
     var btn = document.createElement('a');
     btn.id = 'ghaToggleCollapseExpand';
-    btn.className = 'minibutton';
+    btn.className = 'minibutton right';
     btn.tabIndex = 0;
     btn.href = 'javascript:void(0);';
 
@@ -423,7 +423,7 @@ gha.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
     // the innerHTML must be in line with the above function's logic
     btn.innerHTML = (nowVisible) ? L10N.collapseAll : L10N.expandUnreviewed;
 
-    buttonBar.appendChild(btn);
+    buttonBarContainer.insertBefore(btn, refElement);
 };
 
 /**
