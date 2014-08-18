@@ -70,3 +70,5 @@
 // 1.0.2.20140724
 //  Script stopped working due to GH HTML structure change, this is a quick fix.
 //  A number of refactorings and some automated tests were added (work in progress).
+// 1.0.3.20140818
+//  'Expand unreviewed' button was a child of 'Show diff stats' instead of being a sibling
