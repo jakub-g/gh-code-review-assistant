@@ -102,24 +102,6 @@ var L10N = {
     refreshForConfigUpdate : "Refresh the page to see the update of the config",
 };
 
-L10N.firstRunMsg = "Hello from GH Code Review Assistant!\n\n\
-You've just updated to v1.0 which adds lots of great features but is backward incompatible. \
-It's advised to wipe your code review status before continuing. If you have pending code reviews, \
-you may want to downgrade temporarily.\n\n\
-New features:\n\
-- Customizing settings right in the browser\n\
-- Importing/exporting code review status through the hash in the URL\n\
-- Third button state: expand unreviewed\n\n\
-Fixes:\n\
-- Now using canonical SHA1 in storage\n\
-- Commits with same SHA1 across forks are now sharing code review status\n\
-- Added button to wipe just status for current URL\n\
-- Some other little fixes\n\n\
-To customize the settings, go to some pull request page, and open config dialog in the bottom of the page.\n\n\
-To see the upcoming features:\n\
-https://github.com/jakub-g/gh-code-review-assistant/issues?labels=TODO&page=1&state=open\n\n\
-Enjoy the new version!";
-
 var gha = {
     classes : {},  // classes to be instantiated
     instance : {},  // holder of instantiated storage
@@ -1345,14 +1327,6 @@ var main = function () {
     gha.DomWriter.attachStatusImportExportButtons(footer);
     gha.DomWriter.attachGHACfgButton(footer);
 
-    var isFirstRun = (GM_getValue('firstRun.1.0') === undefined);
-    if (isFirstRun) {
-        GM_setValue('firstRun.1.0', true);
-        setTimeout(function() {
-            alert(L10N.firstRunMsg);
-            document.querySelector('.ghaDialogParent').style.display = "block";
-        }, 800);
-    }
     // gha.DomWriter.enableEditing();
 };
 
