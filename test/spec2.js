@@ -1,16 +1,7 @@
 // this file is executed in the scope of PhantomJS
 var phantomTester = require('userscript-phantom-tester')
-    .userScript("./polyfills/Function.bind.js")
+    .polyfill("./polyfills/Function.bind.js")
     .userScript("../ghAssistant.user.js");
-
-phantomTester.setConfig({
-    phantom : {
-        ignoredErrors : [
-            "evaluating 'Array.prototype.forEach.call.bind",
-            "Can't find variable: $"
-        ]
-    }
-});
 
 phantomTester.setTestArgs({
     filesOnPage : 3
