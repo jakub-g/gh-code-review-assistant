@@ -1,3 +1,6 @@
 {
-  "target": "C:\\myUserscripts\\"
+  "target": [
+    "C:\\myUserscripts\\",
+    "D:\\myUserscripts\\"
+  ]
 }

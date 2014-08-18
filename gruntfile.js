@@ -12,11 +12,21 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.config('watch', {
-        files: ['**/*'],
-        tasks: syncEnabled ? testTasks.concat('copy') : testTasks,
-        options : {
-            atBegin : true,
-            spawn : true
+        testAndSync : {
+            files: ['**/*'],
+            tasks: syncEnabled ? testTasks.concat('sync') : testTasks,
+            options : {
+                atBegin : true,
+                spawn : true
+            }
+        },
+        sync : {
+            files: ['**/*'],
+            tasks: ['sync'],
+            options : {
+                atBegin : true,
+                spawn : true
+            }
         }
     });
 
@@ -31,10 +41,15 @@ module.exports = function(grunt) {
     if (syncEnabled) {
         grunt.loadNpmTasks('grunt-contrib-copy');
         grunt.config('copy', {
-            main : {
+            first : {
                 expand: true,
                 src : ['*.user.js'],
-                dest : syncConf.target,
+                dest : syncConf.target[0]
+            },
+            second : {
+                expand: true,
+                src : ['*.user.js'],
+                dest : syncConf.target[1]
             }
         });
     }
