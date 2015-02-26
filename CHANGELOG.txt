@@ -72,3 +72,5 @@
 //  A number of refactorings and some automated tests were added (work in progress).
 // 1.0.3.20140818
 //  'Expand unreviewed' button was a child of 'Show diff stats' instead of being a sibling
+// 1.0.4.20150226
+//  Fixed selectors for some class changes that Github made
