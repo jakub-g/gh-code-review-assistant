@@ -167,7 +167,7 @@ gha.DomReader.getNumberOfFiles = function () {
 };
 
 gha.DomReader.getFilePathFromDiffContainerHeader = function (diffContainerHeader) {
-    return diffContainerHeader.querySelector('.info').children[1].innerHTML.trim();
+    return diffContainerHeader.querySelector('.file-info').children[1].innerHTML.trim();
 };
 
 // =================================================================================================
@@ -453,7 +453,7 @@ gha.DomWriter.attachPerDiffFileFeatures = function () {
 };
 
 gha.DomWriter.makeFileNameKeyboardAccessible = function (child) {
-    var fileNameSpan = child.querySelector('.info > .js-selectable-text');
+    var fileNameSpan = child.querySelector('.file-info > .js-selectable-text');
     // turns out getting parent is impossible after changing outerHTML, let's do it now
     var diffContainerBody = fileNameSpan.parentNode.parentNode.parentNode.children[1];
     fileNameSpan.className += ' ghaFileNameSpan';
@@ -486,7 +486,7 @@ gha.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also c
     newButton.innerHTML = text;
     newButton.addEventListener('click', gha.ClickHandlers.createReviewButtonHandler(text, diffContainer));
 
-    var parentOfNewButton = diffContainer.querySelector('div.actions');
+    var parentOfNewButton = diffContainer.querySelector('div.file-actions');
     gha.DomUtil.insertAsFirstChild(newButton, parentOfNewButton);
 };
 
@@ -953,7 +953,7 @@ gha.VisibilityManager.toggleDisplayAll = function (iVisible, bKeepItemFromUrlHas
         var diffContainer = diffContainers[i];
         var diffContainerHeader = diffContainer.children[0];
         var diffContainerBody = diffContainer.children[1];
-        var fileName = diffContainer.querySelector('.meta').getAttribute('data-path');
+        var fileName = diffContainer.querySelector('.file-header').getAttribute('data-path');
 
         if (bKeepItemFromUrlHash && !iVisible && fileName == hashInUrl){
             continue;
