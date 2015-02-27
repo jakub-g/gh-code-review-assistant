@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Collapse & expand files one by one on diffs and mark them as reviewed. Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         1.0.3.20140818
+// @version         1.0.4.20150226
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.githubusercontent.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
