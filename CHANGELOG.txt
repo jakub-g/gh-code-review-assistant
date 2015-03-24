@@ -74,3 +74,5 @@
 //  'Expand unreviewed' button was a child of 'Show diff stats' instead of being a sibling
 // 1.0.4.20150226
 //  Fixed selectors for some class changes that Github made
+// 1.0.5.20150324
+//  Fixed CSS issue with buttons displaying as text
