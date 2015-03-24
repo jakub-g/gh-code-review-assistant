@@ -201,16 +201,16 @@ gha.DomWriter.attachGlobalCss = function () {
     css.push('.ghaFileStateFail   a.ghaFileNameSpan { color: #fff !important;}');
 
     // we have border, let's tell Firefox not to add its default dotted outline
-    css.push('.minibutton:focus {outline: 0;}');
+    css.push('.btn btn-sm:focus {outline: 0;}');
 
-    css.push('.ghaFileStateNormal .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
-    css.push('.ghaFileStateFail   .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
-    css.push('.ghaFileStateOk     .minibutton{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
+    css.push('.ghaFileStateNormal .btn{text-shadow: none !important; background-image: linear-gradient(to bottom, #fafafa, #eaeaea) !important;}');
+    css.push('.ghaFileStateFail   .btn{text-shadow: none !important; background-image: linear-gradient(to bottom, #833, #844) !important;       color:#fff !important;}');
+    css.push('.ghaFileStateOk     .btn{text-shadow: none !important; background-image: linear-gradient(to bottom, #333, #344) !important;       color:#fff !important;}');
 
     // default GH CSS is suited only for their one button "view file", let's fix it as we add 2 more buttons
-    css.push('.ghaFileStateNormal .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
-    css.push('.ghaFileStateFail   .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
-    css.push('.ghaFileStateOk     .minibutton:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaFileStateNormal .btn:focus {border-radius: 3px; box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
+    css.push('.ghaFileStateFail   .btn:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
+    css.push('.ghaFileStateOk     .btn:focus {border-radius: 3px; box-shadow: 0 0 3px 4px #fc0; border-color: #da0;}');
 
     css.push('.ghaFileNameSpan:focus {outline:0; border-radius:5px;}');
     css.push('.ghaFileStateNormal .ghaFileNameSpan:focus {box-shadow: 0 0 3px 4px rgba(81, 167, 232, 0.5);}');
@@ -401,7 +401,7 @@ gha.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
 
     var btn = document.createElement('a');
     btn.id = 'ghaToggleCollapseExpand';
-    btn.className = 'minibutton right';
+    btn.className = 'btn btn-sm right';
     btn.tabIndex = 0;
     btn.href = 'javascript:void(0);';
 
@@ -479,7 +479,7 @@ gha.DomWriter._attachReviewStatusButton = function (diffContainer, text /*also c
     }
 
     var newButton = document.createElement('a');
-    newButton.className = 'minibutton ghaToggleFileState ghaToggleFileState' + (text == L10N.ok ? 'Ok' : 'Fail');
+    newButton.className = 'btn btn-sm ghaToggleFileState ghaToggleFileState' + (text == L10N.ok ? 'Ok' : 'Fail');
 
     newButton.href = "javascript:void(0)"; // crucial to make it launchable from keyboard
     newButton.tabIndex = 0;
@@ -1283,7 +1283,7 @@ gha.DomUtil = {
         btn.disabled = !!cfg.disabled;
         btn.style.cssText = cfg.style || "";
         btn.innerHTML = cfg.text || "";
-        btn.className = 'minibutton ghaBottomButton ' + (cfg.className || "");
+        btn.className = 'btn btn-sm ghaBottomButton ' + (cfg.className || "");
         btn.tabIndex = 0;
 
         return btn;
