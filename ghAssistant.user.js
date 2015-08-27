@@ -453,7 +453,7 @@ gha.DomWriter.attachPerDiffFileFeatures = function () {
 };
 
 gha.DomWriter.makeFileNameKeyboardAccessible = function (child) {
-    var fileNameSpan = child.querySelector('.file-info > .js-selectable-text');
+    var fileNameSpan = child.querySelector('.file-info > .user-select-contain');
     // turns out getting parent is impossible after changing outerHTML, let's do it now
     var diffContainerBody = fileNameSpan.parentNode.parentNode.parentNode.children[1];
     fileNameSpan.className += ' ghaFileNameSpan';
