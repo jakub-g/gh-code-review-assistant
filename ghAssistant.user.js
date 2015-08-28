@@ -2,7 +2,7 @@
 // @name            GitHub code review assistant
 // @description     Collapse & expand files one by one on diffs and mark them as reviewed. Useful to review commits with lots of files changed.
 // @icon            https://github.com/favicon.ico
-// @version         1.0.5.20150324
+// @version         1.0.6.20150827
 // @namespace       http://jakub-g.github.com/
 // @author          http://jakub-g.github.com/
 // @downloadURL     https://raw.githubusercontent.com/jakub-g/gh-code-review-assistant/master/ghAssistant.user.js
@@ -453,7 +453,7 @@ gha.DomWriter.attachPerDiffFileFeatures = function () {
 };
 
 gha.DomWriter.makeFileNameKeyboardAccessible = function (child) {
-    var fileNameSpan = child.querySelector('.file-info > .js-selectable-text');
+    var fileNameSpan = child.querySelector('.file-info > .user-select-contain');
     // turns out getting parent is impossible after changing outerHTML, let's do it now
     var diffContainerBody = fileNameSpan.parentNode.parentNode.parentNode.children[1];
     fileNameSpan.className += ' ghaFileNameSpan';
