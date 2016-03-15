@@ -78,3 +78,5 @@
 //  Fixed CSS issue with buttons displaying as text
 // 1.0.6.20150324
 //  Fixed selectors for some class changes that Github made
+// 1.1.0.20160315
+//  Fixed selectors for some class changes that Github made
