@@ -11,7 +11,13 @@
 ========================
 
 Since I have less time recently to maintain the project, all the contributions are encouraged and will be welcome.
-If you're looking for the best dev environment, for me it's been oldish Firefox (~23) + Greasemonkey + Firebug 1.x.
+
+If you're looking for the best dev environment:
+
+On Chrome, you can edit the file directly in Tampermonkey, and to put breakpoints, put `debugger` statements in the
+interesting code paths
+
+On Firefox, it used to be for me it's been oldish Firefox (~23) + Greasemonkey + Firebug 1.x.
 This makes it possible to debug the script directly in Firebug - it does not work with newer Firefoxes.
 
 What's that?
