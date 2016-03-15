@@ -112,9 +112,7 @@ Example: [ariatemplates # pull 427](https://github.com/ariatemplates/ariatemplat
 I like it!
 ==========
 
-Sign up to Usescripts.org and [rate the script and/or become a fan](http://userscripts.org:8080/scripts/show/153049).
-
-Contributions and feature requests are welcome.
+Spread the word and and star this repo on GitHub. Fork it and submit patches if you found bugs.
 
 You may also like some other of my userscripts:
 
