@@ -15,10 +15,11 @@ Since I have less time recently to maintain the project, all the contributions a
 If you're looking for the best dev environment:
 
 On Chrome, you can edit the file directly in Tampermonkey, and to put breakpoints, put `debugger` statements in the
-interesting code paths
+interesting code paths. Then open Chrome Dev Tools and debug like any standard JS file.
 
-On Firefox, it used to be for me it's been oldish Firefox (~23) + Greasemonkey + Firebug 1.x.
-This makes it possible to debug the script directly in Firebug - it does not work with newer Firefoxes.
+On Firefox, I used to work with oldish Firefox (~23) + Greasemonkey + Firebug 1.x.
+This makes it possible to debug the script directly in Firebug - last time I checked you can't debug like this in newer Firefoxes.
+
 
 What's that?
 ============
