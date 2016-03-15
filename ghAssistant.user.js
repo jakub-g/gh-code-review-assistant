@@ -395,9 +395,8 @@ gha.DomWriter._attachClickListenersToChild = function (diffContainer) {
  * Add buttons that collapse/expand all the diffs on the current page.
  */
 gha.DomWriter.attachCollapseExpandDiffsButton = function (hiddenByDefault) {
-
-    var buttonBarContainer = document.querySelector('#toc');
-    var refElement = buttonBarContainer.querySelector('.toc-diff-stats');
+    var buttonBarContainer = document.querySelector('.pr-toolbar.js-sticky-offset-scroll').firstElementChild;
+    var refElement = buttonBarContainer.children[2]; //querySelector('.right');
 
     var btn = document.createElement('a');
     btn.id = 'ghaToggleCollapseExpand';
