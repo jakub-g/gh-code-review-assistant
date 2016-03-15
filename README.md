@@ -45,14 +45,14 @@ Installation guide
 ### Firefox
 
  1. Install [GreaseMonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) and restart the browser.
- 1. Go to [Userscripts.org GH Assistant page](http://userscripts.org/scripts/show/153049) and click "Install" in the top-right, or navigate to [ghAssistant.user.js on GitHub](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js).
+ 1. Navigate to [ghAssistant.user.js on GitHub](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js).
  1. You should see an installation prompt. Accept the installation.
  1. GH Assistant should work right away.
 
 ### Chrome
 
  1. Install [TamperMonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en).
- 1. Go to [Userscripts.org GH Assistant page](http://userscripts.org/scripts/show/153049) and click "Install" in the top-right, or navigate to [ghAssistant.user.js on GitHub](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js).
+ 1. Navigate to [ghAssistant.user.js on GitHub](https://github.com/jakub-g/gh-code-review-assistant/raw/master/ghAssistant.user.js).
  1. You should see an installation prompt. Click "OK" (Install with Tampermonkey).
  1. GH Assistant should work right away.
 
