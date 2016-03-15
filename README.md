@@ -33,7 +33,14 @@ Github Assistant is a UserScript, i.e. a piece of JavaScript code, that runs in 
 
 Works on `/commit`, `/pull`, `/compare` pages.
 
+
+Configuration
+=============
+
 You can configure all the options right from the config dialog in the browser.
+
+Scroll to the bottom of any pull request and you will see a number of buttons added by the script.
+
 
 Preview
 =======
