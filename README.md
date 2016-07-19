@@ -123,7 +123,7 @@ You may also like some other of my userscripts:
 - and several other
 
 See them on [Github](https://github.com/jakub-g/greasemonkey-userscripts)
-or [Userscripts.org](http://userscripts.org:8080/users/204917/scripts)
+or [Userscripts.org](http://userscripts-mirror.org/users/204917/scripts)
 
 Author's homepage: [jakub-g.github.io](http://jakub-g.github.io)
 
