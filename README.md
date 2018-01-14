@@ -1,25 +1,14 @@
 # GitHub Code Review Assistant
   ----------------------------
 
-[![Build Status](https://secure.travis-ci.org/jakub-g/gh-code-review-assistant.png?branch=master)](http://travis-ci.org/jakub-g/gh-code-review-assistant)
-  
-*Note: GitHub is a trademark of GitHub Inc. The developer of this extension is NOT affiliated with GitHub, Inc.*
+DEPRECATION NOTE
+================
 
-*This is an unofficial browser extension that is meant to enhance the experience of browsing pages in github.com domain.*
+The project is no longer maintained and left here for historical reasons.
 
-**CONTIBUTIONS ARE WELCOME**
-========================
+Since GitHub is evolving at a steady pace and updating the script would require a regular effort, and since I use GitHub way less often than before, I will no longer maintain the script for now.
 
-Since I have less time recently to maintain the project, all the contributions are encouraged and will be welcome.
-
-If you're looking for the best dev environment:
-
-On Chrome, you can edit the file directly in Tampermonkey, and to put breakpoints, put `debugger` statements in the
-interesting code paths. Then open Chrome Dev Tools and debug like any standard JS file.
-
-On Firefox, I used to work with oldish Firefox (~23) + Greasemonkey + Firebug 1.x.
-This makes it possible to debug the script directly in Firebug - last time I checked you can't debug like this in newer Firefoxes.
-
+However, see instead: https://github.com/sindresorhus/refined-github
 
 What's that?
 ============
